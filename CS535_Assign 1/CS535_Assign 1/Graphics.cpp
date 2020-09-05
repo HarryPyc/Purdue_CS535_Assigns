@@ -1,5 +1,5 @@
 #include "Graphics.h"
-
+#include <string>
 Graphics::Graphics(int _width, int _height)
 {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
@@ -38,15 +38,18 @@ void Graphics::run()
 	float angle = 0.f;
 	while (!glfwWindowShouldClose(window))
 	{
-		meshList[3]->R = Rotate(angle, fvec4(0, 1, 0, 0));
-		meshList[4]->R = Rotate(angle++, fvec4(0, 1, 1, 0));
+		
 		if (angle == 360.f) {
 			angle = 0.f;
-			fbo->clear(fvec4(0));
+			fbo->Clear(fvec4(0));
 		}
 		for (int i = 0; i < meshList.size(); i++) {
 			fbo->DrawMesh(cam, meshList[i]);
 		}
+		/*string fname = "output/result" + to_string(int(angle)) + ".tif";
+		fbo->SaveAsTiff(fname.c_str());*/
+		meshList[3]->R = Rotate(angle, fvec4(0, 1, 0, 0));
+		meshList[4]->R = Rotate(angle++, fvec4(0, 1, 1, 0));
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();

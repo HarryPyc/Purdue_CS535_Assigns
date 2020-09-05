@@ -1,24 +1,25 @@
 #include "FrameBuffer.h"
-#include <omp.h>
 #include <libtiff/tiffio.h>
+#include <omp.h>
 
 FrameBuffer::FrameBuffer(int _width, int _height)
 {
 	w = _width; h = _height;
 	pixels = new unsigned int[w * h];
-	clear(fvec4(0.f, 0.f, 0.f, 0.f));
+	Clear(fvec4(0.f, 0.f, 0.f, 0.f));
 
 }
 
 
 
-void FrameBuffer::clear(fvec4 color)
+void FrameBuffer::Clear(fvec4 color)
 {
+	const uint c = convVec4ToRGBA8(color);
 #ifdef MULTI_PROCESS
 #pragma omp parallel for
 #endif 
 	for (int i = 0; i < w * h; i++)
-		*(pixels + i) = convVec4ToRGBA8(color);
+		*(pixels + i) = c;
 }
 
 void FrameBuffer::SetPixel(int x, int y, fvec4 color)
@@ -70,7 +71,7 @@ void FrameBuffer::DrawMesh(Camera* cam, Mesh* mesh)
 	glDrawPixels(w, h, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 }
 
-void FrameBuffer::LoadTiff(char* fname) {
+void FrameBuffer::LoadTiff(const char* fname) {
 	TIFF* in = TIFFOpen(fname, "r");
 	if (in == NULL) {
 		cerr << fname << " could not be opened" << endl;
@@ -94,7 +95,7 @@ void FrameBuffer::LoadTiff(char* fname) {
 
 	TIFFClose(in);
 }
-void FrameBuffer::SaveAsTiff(char* fname) {
+void FrameBuffer::SaveAsTiff(const char* fname) {
 	TIFF* out = TIFFOpen(fname, "w");
 
 	if (out == NULL) {
