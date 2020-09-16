@@ -170,10 +170,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="Define.h" />
     <ClInclude Include="FrameBuffer.h" />
     <ClInclude Include="Graphics.h" />
     <ClInclude Include="Mat4.h" />
     <ClInclude Include="Mesh.h" />
+    <ClInclude Include="ObjLoad.h" />
     <ClInclude Include="Vec4.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -3,6 +3,7 @@
 #include "Mat4.h"
 #include "Camera.h"
 #include "Mesh.h"
+#include "Define.h"
 #define MULTI_PROCESS
 
 class FrameBuffer
@@ -12,8 +13,9 @@ public:
 
 	void Clear(fvec4 color);
 	void SetPixel(int x, int y, fvec4 color);
-	void Draw2DSegements(float a[2], float b[2], fvec4 color);
-	void DrawMesh(Camera* cam, Mesh* mesh);
+	void Draw2DSegements(float* a, float* b, fvec4 c1, fvec4 c2);
+	void DrawTriangles(float* v0, float* v1, float* v2, fvec4* color, uint mode);
+	void DrawMesh(Camera* cam, Mesh* mesh, uint mode);
 
 	void LoadTiff(const char* fname);
 	void SaveAsTiff(const char* fname);
@@ -24,5 +26,6 @@ public:
 private:
 	unsigned int *pixels;
 	//Transformed Vertices
+	float* ConvToScreenSpace(fvec4 p);
 };
 

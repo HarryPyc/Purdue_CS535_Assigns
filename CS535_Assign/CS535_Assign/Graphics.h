@@ -17,6 +17,6 @@ public:
 
 	void run();
 	Graphics(int _width, int _height);
-	~Graphics() { glfwDestroyWindow(window); };
+	~Graphics();
 };
 
