@@ -1,5 +1,13 @@
 #include "Mat4.h"
 
+Mat4::Mat4(float val)
+{
+	fvec4 row = fvec4(val);
+	for (int i = 0; i < 4; i++) {
+		rows[i] = row;
+	}
+}
+
 Mat4::Mat4(fvec4 v1, fvec4 v2, fvec4 v3, fvec4 v4)
 {
 	rows[0] = v1, rows[1] = v2, rows[2] = v3, rows[3] = v4;
@@ -103,10 +111,11 @@ Mat4 Inverse(Mat4 m)
 Mat4 Perspective(float fovy, float aspect, float zNear, float zFar)
 {
 	float rad = 3.1415926f*fovy/180.f, tanHalfFovy = tan(rad / 2.f);
-	return Mat4(fvec4(1/(aspect*tanHalfFovy), 0.f, 0.f, 0.f),
-				fvec4(0.f,1/tanHalfFovy, 0.f, 0.f),
-				fvec4(0.f, 0.f, -(zNear+zFar)/(zFar-zNear), -(2 * zFar * zNear) / (zFar - zNear)),
-				fvec4(0.f, 0.f, -1.f , 0.f));
+	Mat4 P(fvec4(1/(aspect*tanHalfFovy), 0.f, 0.f, 0.f),
+			fvec4(0.f,1/tanHalfFovy, 0.f, 0.f),
+			fvec4(0.f, 0.f, -(zNear+zFar)/(zFar-zNear), -(2 * zFar * zNear) / (zFar - zNear)),
+			fvec4(0.f, 0.f, -1.f , 0.f));
+	return P;
 }
 
 Mat4 LookAt(fvec4 eye, fvec4 center, fvec4 up)
@@ -142,6 +151,7 @@ Mat4 Scale(fvec4 s)
 Mat4 Rotate(float angle, fvec4 axis)
 {
 	float rad = 3.1415926f * angle / 180.f;
+	axis = Normalize(axis);
 	float rcos = cos(rad), rsin = sin(rad), u = axis.x, v = axis.y, w = axis.z;
 	Mat4 R;
 	R[0][0] = rcos + u * u * (1 - rcos);

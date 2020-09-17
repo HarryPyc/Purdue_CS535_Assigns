@@ -23,6 +23,7 @@ public:
 	Vertex GetVertex(int i);
 	Material material;
 	Mat4 R, T, S;
+	fvec4 minAABB, maxAABB;
 
 	void LoadObj(const string& path);
 	Mesh();

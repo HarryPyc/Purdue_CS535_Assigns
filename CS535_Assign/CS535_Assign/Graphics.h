@@ -12,7 +12,7 @@ public:
 	int w, h;
 	GLFWwindow* window;
 	FrameBuffer* fbo;
-	Camera* cam;
+	Camera* cam, *cam2;
 	vector<Mesh*> meshList;
 
 	void run();

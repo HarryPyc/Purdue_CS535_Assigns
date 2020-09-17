@@ -10,7 +10,7 @@ Vertex Mesh::GetVertex(int i)
 	vert.p = fvec4(data.vertex[i * 3], data.vertex[i * 3 + 1], data.vertex[i * 3 + 2], 1.f);
 	vert.n = fvec4(data.normal[i * 3], data.normal[i * 3 + 1], data.normal[i * 3 + 2], 0.f);
 	//vert.u = TexCoords[i][0]; vert.v = TexCoords[i][1];
-	vert.color = material.color; vert.emission = material.color;
+	vert.color = material.color; vert.emission = material.emission;
 	return vert;
 }
 
@@ -36,5 +36,6 @@ Mesh::Mesh()
 void Mesh::LoadObj(const string& path)
 {
 	data = obj::loadModelFromFile(path);
-
 }
+
+

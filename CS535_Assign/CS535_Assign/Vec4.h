@@ -24,7 +24,11 @@ public:
 	inline Vec4 operator/(const Vec4& v2) { const Vec4& v1 = *this; return Vec4(v1.x / v2.x, v1.y / v2.y, v1.z / v2.z, v1.w / v2.w); }
 	template<class U> inline Vec4 operator/(const U& scalar) { const Vec4& v1 = *this; return Vec4(v1.x / scalar, v1.y / scalar, v1.z / scalar, v1.w / scalar); }
 
-	friend inline std::ostream& operator<<(std::ostream& ostr, Vec4 v) { return ostr << '(' << v[0] << ", " << v[1] << ", " << v[2] << ", " << v[3] << ')'; }
+	friend inline std::ostream& operator<<(std::ostream& ostr, Vec4 v) { return ostr <<  v[0] << ' ' << v[1] << ' ' << v[2] << ' ' << v[3] <<std::endl; }
+	friend inline std::istream& operator>>(std::istream& in, Vec4 &v) {
+		in >> v.x >> v.y >> v.z >> v.w;
+		return in;
+	}
 	friend inline T Dot(const Vec4& v1, const Vec4& v2) { return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z + v1.w*v2.w; }
 	friend inline Vec4 Cross(const Vec4& v1, const Vec4& v2) { return Vec4(v1.y * v2.z - v1.z * v2.y, v1.z * v2.x - v1.x * v2.z, v1.x * v2.y - v1.y * v2.x, T(0)); }
 	friend inline Vec4 Normalize(Vec4 v) { return v / v.Length(); }

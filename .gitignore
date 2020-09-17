@@ -92,7 +92,7 @@ StyleCopReport.xml
 *.pidb
 *.svclog
 *.scc
-
+!CS535_Assign/CS535_Assign/asset/model/*.obj
 # Chutzpah Test files
 _Chutzpah*
 

@@ -34,6 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 #include <set>
 #include <vector>
 
+
 namespace obj {
 
     struct Model {
@@ -138,7 +139,7 @@ namespace obj {
 
             if (!(line_in >> op))
                 continue;
-            if (op == "v")
+            if (op == "v") 
                 line_in >> data.vertex >> data.vertex >> data.vertex;
             else if (op == "vt")
                 line_in >> data.texCoord >> data.texCoord >> data.texCoord;

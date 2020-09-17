@@ -8,6 +8,7 @@ public:
 	fvec4 rows[4]; 
 
 	Mat4() {}
+	Mat4(float val);
 	Mat4(fvec4 v1, fvec4 v2, fvec4 v3, fvec4 v4);
 
 	fvec4& operator[](int i);
