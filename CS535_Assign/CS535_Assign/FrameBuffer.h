@@ -4,7 +4,7 @@
 #include "Camera.h"
 #include "Mesh.h"
 #include "Define.h"
-#define MULTI_PROCESS
+
 
 class FrameBuffer
 {

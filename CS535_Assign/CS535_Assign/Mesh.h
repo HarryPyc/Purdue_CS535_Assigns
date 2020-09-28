@@ -3,6 +3,7 @@
 #include <vector>
 #include <iostream>
 #include "ObjLoad.h"
+#include "Define.h"
 
 using namespace std;
 struct Material {
@@ -12,7 +13,6 @@ struct Material {
 struct Vertex {
 	fvec4 p, n;
 	float u,v;
-	fvec4 color, emission;
 };
 
 class Mesh
@@ -20,10 +20,11 @@ class Mesh
 public:
 	uint GetIndexSize();
 	uint GetIndex(int i);
-	Vertex GetVertex(int i);
+	void UploadVertex();
 	Material material;
 	Mat4 R, T, S;
 	fvec4 minAABB, maxAABB;
+	vector<Vertex> vertices;
 
 	void LoadObj(const string& path);
 	Mesh();

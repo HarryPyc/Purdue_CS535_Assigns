@@ -1,19 +1,5 @@
 #include "Mesh.h"
 
-Vertex Mesh::GetVertex(int i)
-{
-	if (i >= data.vertex.size()/3) {
-		cout << "Index out of range of Vertices" << endl;
-		return Vertex();
-	}
-	Vertex vert;
-	vert.p = fvec4(data.vertex[i * 3], data.vertex[i * 3 + 1], data.vertex[i * 3 + 2], 1.f);
-	vert.n = fvec4(data.normal[i * 3], data.normal[i * 3 + 1], data.normal[i * 3 + 2], 0.f);
-	//vert.u = TexCoords[i][0]; vert.v = TexCoords[i][1];
-	vert.color = material.color; vert.emission = material.emission;
-	return vert;
-}
-
 uint Mesh::GetIndexSize()
 {
 	return data.faces["default"].size();
@@ -22,6 +8,29 @@ uint Mesh::GetIndexSize()
 uint Mesh::GetIndex(int i)
 {
 	return data.faces["default"][i];
+}
+
+void Mesh::UploadVertex()
+{
+	Mat4 M = T * R * S;
+	if (vertices.size() == 0) {
+		for (int i = 0; i < data.vertex.size()/3; i ++) {
+			Vertex vert;
+			vert.p = M * fvec4(data.vertex[3*i], data.vertex[3*i + 1], data.vertex[3*i + 2], 1.f);
+			vert.n = Normalize(Transpose(Inverse(M)) * fvec4(data.normal[3*i], data.vertex[3*i + 1], data.vertex[3*i + 2], 1.f));
+			//vert.u = data.texCoord[2 * i], vert.v = data.texCoord[2 * i + 1];
+			vertices.push_back(vert);
+		}
+	}
+	else{
+#ifdef  MULTI_PROCESS
+#pragma omp parallel for
+#endif //  MULTI_PROCESS
+		for (int i = 0; i < vertices.size(); i++) {
+			vertices[i].p = M * fvec4(data.vertex[3 * i], data.vertex[3 * i + 1], data.vertex[3 * i + 2], 1.f);
+			vertices[i].n = Normalize(Transpose(Inverse(M)) * fvec4(data.normal[3 * i], data.vertex[3 * i + 1], data.vertex[3 * i + 2], 1.f));
+		}
+	}
 }
 
 

@@ -115,22 +115,23 @@ void FrameBuffer::DrawTriangles(fvec4 v0, fvec4 v1, fvec4 v2, fvec4* color, uint
 void FrameBuffer::DrawMesh(Camera* cam, Mesh* mesh, uint mode)
 {
 	const int n = mesh->GetIndexSize();
-	Mat4 PVM = cam->P * cam->V * mesh->T * mesh->R * mesh->S;
+	Mat4 PV = cam->P * cam->V;
+	mesh->UploadVertex();
 #ifdef MULTI_PROCESS
 #pragma omp parallel for
 #endif 
 	for (int i = 0; i < n; i+=3) {
-		Vertex v0 = mesh->GetVertex(mesh->GetIndex(i));
-		Vertex v1 = mesh->GetVertex(mesh->GetIndex(i+1));
-		Vertex v2 = mesh->GetVertex(mesh->GetIndex(i+2));
+		Vertex v0 = mesh->vertices[mesh->GetIndex(i)];
+		Vertex v1 = mesh->vertices[mesh->GetIndex(i+1)];
+		Vertex v2 = mesh->vertices[mesh->GetIndex(i+2)];
 		//Transform and Projection
-		v0.p = PVM * v0.p;
-		v1.p = PVM * v1.p;
-		v2.p = PVM * v2.p;
+		v0.p = PV * v0.p;
+		v1.p = PV * v1.p;
+		v2.p = PV * v2.p;
 		fvec4 _v0 = ConvToScreenSpace(v0.p);
 		fvec4 _v1 = ConvToScreenSpace(v1.p);
 		fvec4 _v2 = ConvToScreenSpace(v2.p);
-		fvec4* colors = new fvec4[3]{ v0.color, v1.color, v2.color };
+		fvec4* colors = new fvec4[3]{ mesh->material.color, mesh->material.color, mesh->material.color };
 		DrawTriangles(_v0, _v1, _v2, colors, mode);
 	}
 	glDrawPixels(w, h, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
@@ -141,7 +142,7 @@ void FrameBuffer::DrawMesh(Camera* cam, Mesh* mesh, uint mode)
 fvec4 FrameBuffer::ConvToScreenSpace(fvec4 p)
 {
 	p = p / p.w;//Perspective Division
-	p.z = log10(p.z);
+	//p.z = log(p.z);
 	p.x = (p.x + 1.f) / 2.f * w;
 	p.y = (p.y + 1.f) / 2.f * h;
 	return p;
