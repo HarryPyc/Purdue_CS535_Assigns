@@ -62,8 +62,8 @@ void Graphics::run()
 		meshList[2]->R = Rotate(angle, fvec4(0, 0, 1, 0));
 		meshList[3]->R = Rotate(angle, fvec4(1, 1, 0, 0));
 		meshList[4]->R = Rotate(angle, fvec4(1, 0, 1, 0));
-		string fname = "output/result" + to_string(frames) + ".tif";
-		fbo->SaveAsTiff(fname.c_str());
+		/*string fname = "output/result" + to_string(frames) + ".tif";
+		fbo->SaveAsTiff(fname.c_str());*/
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
