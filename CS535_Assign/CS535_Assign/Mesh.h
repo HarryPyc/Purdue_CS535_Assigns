@@ -23,17 +23,26 @@ public:
 	uint GetIndexSize();
 	uint GetIndex(int i);
 	void UploadVertex();
+	void UploadAABB(fvec4 v);
+	void TranslateMesh(fvec4 t);
+	void ScaleMesh(fvec4 s);
+	void SetCenterAndScale(fvec4 center, fvec4 s);
+
 	Material material;
 	Texture* texture;
 	Mat4 R, T, S;
 	fvec4 minAABB, maxAABB;
+	unsigned int *indices;
+	int trisN;
 	vector<Vertex> vertices;
 
 	void LoadObj(const string& path);
+	void LoadBin(char* fname);
 	Mesh();
 	~Mesh() { delete texture; }
 private:
 	obj::Model data;
+	fvec4 centroid;
 
 };
 
