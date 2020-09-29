@@ -18,7 +18,9 @@ void Mesh::UploadVertex()
 			Vertex vert;
 			vert.p = M * fvec4(data.vertex[3*i], data.vertex[3*i + 1], data.vertex[3*i + 2], 1.f);
 			vert.n = Normalize(Transpose(Inverse(M)) * fvec4(data.normal[3*i], data.vertex[3*i + 1], data.vertex[3*i + 2], 1.f));
-			//vert.u = data.texCoord[2 * i], vert.v = data.texCoord[2 * i + 1];
+			if(data.texCoord.size()>0)
+				vert.u = data.texCoord[2 * i], vert.v = data.texCoord[2 * i + 1];
+			vert.c = material.color;
 			vertices.push_back(vert);
 		}
 	}
@@ -39,6 +41,7 @@ Mesh::Mesh()
 	R = Rotate(0.f, fvec4(0.f));
 	T = Translate(fvec4(0.f));
 	S = Scale(fvec4(1.f));
+	texture = 0;
 }
 
 

@@ -1,6 +1,10 @@
 #include "FrameBuffer.h"
-#include <libtiff/tiffio.h>
 #include <omp.h>
+#define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb_image.h>
+#include <stb_image_write.h>
+
 
 FrameBuffer::FrameBuffer(int _width, int _height)
 {
@@ -19,7 +23,7 @@ void FrameBuffer::Clear(fvec4 color)
 #pragma omp parallel for
 #endif 
 	for (int i = 0; i < w * h; i++)
-		*(pixels + i) = c;
+		pixels[i] = c;
 }
 
 void FrameBuffer::ClearZBuffer()
@@ -55,7 +59,7 @@ void FrameBuffer::SetPixel(fvec4 pix, fvec4 color)
 
 
 
-void FrameBuffer::Draw2DSegements(fvec4 a, fvec4 b, fvec4 c1, fvec4 c2)
+void FrameBuffer::Draw2DSegements(fvec4 a, fvec4 b, Vertex vw0, Vertex vw1)
 {
 	float Dx = fabsf(a[0] - b[0]), Dy = fabsf(a[1] - b[1]);
 	const int steps = int(Dx > Dy ? Dx : Dy) + 1;
@@ -66,7 +70,7 @@ void FrameBuffer::Draw2DSegements(fvec4 a, fvec4 b, fvec4 c1, fvec4 c2)
 		float x = a[0] + (b[0] - a[0]) / float(steps) * float(i);
 		float y = a[1] + (b[1] - a[1]) / float(steps) * float(i);
 		float z = a[2] + (b[2] - a[2]) / float(steps) * float(i);
-		fvec4 color = (c1*i+c2*(steps-i)) / float(steps);
+		fvec4 color = (vw0.c*i+vw1.c*(steps-i)) / float(steps);
 		fvec4 pix(x, y, z, 1.f);
 		SetPixel(pix, color);
 	}
@@ -77,19 +81,20 @@ inline float EdgeFunction(fvec4 a, fvec4 b, fvec4 p) {
 	return (p[0] - a[0]) * (b[1] - a[1]) - (p[1] - a[1]) * (b[0] - a[0]);
 }
 
-void FrameBuffer::DrawTriangles(fvec4 v0, fvec4 v1, fvec4 v2, fvec4* color, uint mode)
+void FrameBuffer::DrawTriangles(fvec4 v0, fvec4 v1, fvec4 v2, Vertex vw0, Vertex vw1, Vertex vw2, Texture* tex, uint mode)
 {
 	if (mode == DRAW_LINES) {
-		Draw2DSegements(v0, v1, color[0], color[1]);
-		Draw2DSegements(v1, v2, color[1], color[2]);
-		Draw2DSegements(v0, v2, color[0], color[2]);
+		Draw2DSegements(v0, v1, vw0, vw1);
+		Draw2DSegements(v1, v2, vw1, vw2);
+		Draw2DSegements(v2, v0, vw2, vw0);
 	}
 	else if (mode == DRAW_FILL) {
 		float* minXY = new float[2], * maxXY = new float[2];
-		minXY[0] = round(max(min(min(v0[0], v1[0]), v2[0]), 0.f));
-		minXY[1] = round(max(min(min(v0[1], v1[1]), v2[1]), 0.f));
-		maxXY[0] = round(min(max(max(v0[0], v1[0]), v2[0]), float(w)));
-		maxXY[1] = round(min(max(max(v0[1], v1[1]), v2[1]), float(h)));
+		//Clip
+		minXY[0] = max(min(min(v0[0], v1[0]), v2[0]), 0.f);
+		minXY[1] = max(min(min(v0[1], v1[1]), v2[1]), 0.f);
+		maxXY[0] = min(max(max(v0[0], v1[0]), v2[0]), float(w));
+		maxXY[1] = min(max(max(v0[1], v1[1]), v2[1]), float(h));
 		fvec4 p;
 
 		for (p[1] = minXY[1]; p[1] < maxXY[1]; p[1]++) {
@@ -124,15 +129,14 @@ void FrameBuffer::DrawMesh(Camera* cam, Mesh* mesh, uint mode)
 		Vertex v0 = mesh->vertices[mesh->GetIndex(i)];
 		Vertex v1 = mesh->vertices[mesh->GetIndex(i+1)];
 		Vertex v2 = mesh->vertices[mesh->GetIndex(i+2)];
+		//Screen space
+		fvec4 vs0, vs1, vs2;
 		//Transform and Projection
-		v0.p = PV * v0.p;
-		v1.p = PV * v1.p;
-		v2.p = PV * v2.p;
-		fvec4 _v0 = ConvToScreenSpace(v0.p);
-		fvec4 _v1 = ConvToScreenSpace(v1.p);
-		fvec4 _v2 = ConvToScreenSpace(v2.p);
+		vs0 = ConvToScreenSpace(PV * v0.p);
+		vs1 = ConvToScreenSpace(PV * v1.p);
+		vs2 = ConvToScreenSpace(PV * v2.p);
 		fvec4* colors = new fvec4[3]{ mesh->material.color, mesh->material.color, mesh->material.color };
-		DrawTriangles(_v0, _v1, _v2, colors, mode);
+		DrawTriangles(vs0, vs1, vs2, v0, v1, v2, mesh->texture,  mode);
 	}
 	glDrawPixels(w, h, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 }
@@ -148,49 +152,19 @@ fvec4 FrameBuffer::ConvToScreenSpace(fvec4 p)
 	return p;
 }
 
-void FrameBuffer::LoadTiff(const char* fname) {
-	TIFF* in = TIFFOpen(fname, "r");
-	if (in == NULL) {
-		cerr << fname << " could not be opened" << endl;
-		return;
+
+void FrameBuffer::SaveAsBmp(const char* fname) {
+	unsigned char* p = new unsigned char[w * h * 4];
+#ifdef MULTI_PROCESS
+#pragma omp parallel for
+#endif 
+	for (int i = 0; i < w * h; i++) {
+		fvec4 color = convRGBA8ToVec4(pixels[i]);
+		p[4 * i + 0] = (char)color.r;
+		p[4 * i + 1] = (char)color.g;
+		p[4 * i + 2] = (char)color.b;
+		p[4 * i + 3] = (char)color.a;
 	}
-
-	int width, height;
-	TIFFGetField(in, TIFFTAG_IMAGEWIDTH, &width);
-	TIFFGetField(in, TIFFTAG_IMAGELENGTH, &height);
-	if (w != width || h != height) {
-		w = width;
-		h = height;
-		delete[] pixels;
-		pixels = new unsigned int[w * h];
-		glFlush();
-	}
-
-	if (TIFFReadRGBAImage(in, w, h, pixels, 0) == 0) {
-		cerr << "failed to load " << fname << endl;
-	}
-
-	TIFFClose(in);
-}
-void FrameBuffer::SaveAsTiff(const char* fname) {
-	TIFF* out = TIFFOpen(fname, "w");
-
-	if (out == NULL) {
-		cerr << fname << " could not be opened" << endl;
-		return;
-	}
-
-	TIFFSetField(out, TIFFTAG_IMAGEWIDTH, w);
-	TIFFSetField(out, TIFFTAG_IMAGELENGTH, h);
-	TIFFSetField(out, TIFFTAG_SAMPLESPERPIXEL, 4);
-	TIFFSetField(out, TIFFTAG_BITSPERSAMPLE, 8);
-	TIFFSetField(out, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
-	TIFFSetField(out, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
-	TIFFSetField(out, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
-
-	for (uint32 row = 0; row < (unsigned int)h; row++) {
-		TIFFWriteScanline(out, &pixels[(h - row - 1) * w], row);
-	}
-
-	TIFFClose(out);
+	stbi_write_bmp(fname, w, h, 4, pixels);
+	delete[] p;
 }

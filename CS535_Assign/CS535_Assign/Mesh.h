@@ -4,6 +4,7 @@
 #include <iostream>
 #include "ObjLoad.h"
 #include "Define.h"
+#include "Texture.h"
 
 using namespace std;
 struct Material {
@@ -13,6 +14,7 @@ struct Material {
 struct Vertex {
 	fvec4 p, n;
 	float u,v;
+	fvec4 c;
 };
 
 class Mesh
@@ -22,13 +24,14 @@ public:
 	uint GetIndex(int i);
 	void UploadVertex();
 	Material material;
+	Texture* texture;
 	Mat4 R, T, S;
 	fvec4 minAABB, maxAABB;
 	vector<Vertex> vertices;
 
 	void LoadObj(const string& path);
 	Mesh();
-	~Mesh() {}
+	~Mesh() { delete texture; }
 private:
 	obj::Model data;
 
