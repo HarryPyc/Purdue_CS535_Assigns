@@ -73,6 +73,7 @@ Mesh::Mesh()
 	T = Translate(fvec4(0.f));
 	S = Scale(fvec4(1.f));
 	minAABB.w = 1.f, maxAABB.w = 1.f;
+	texture = 0;
 }
 
 
