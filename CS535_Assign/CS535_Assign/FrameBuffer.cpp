@@ -74,7 +74,7 @@ void FrameBuffer::Draw2DSegements(fvec4 a, fvec4 b, fvec4 c1, fvec4 c2)
 }
 //return true if point p is in the right side of edge ab
 inline float EdgeFunction(fvec4 a, fvec4 b, fvec4 p) {
-	return (p[0] - a[0]) * (b[1] - a[1]) - (p[1] - a[1]) * (b[0] - a[0]);
+	return (p[0] - b[0]) * (a[1] - b[1]) - (p[1] - b[1]) * (a[0] - b[0]);
 }
 
 void FrameBuffer::DrawTriangles(fvec4 v0, fvec4 v1, fvec4 v2, fvec4* color, uint mode)
@@ -92,8 +92,8 @@ void FrameBuffer::DrawTriangles(fvec4 v0, fvec4 v1, fvec4 v2, fvec4* color, uint
 		maxXY[1] = round(min(max(max(v0[1], v1[1]), v2[1]), float(h)));
 		fvec4 p;
 
-		for (p[1] = minXY[1]; p[1] < maxXY[1]; p[1]++) {
-			for (p[0] = minXY[0]; p[0] < maxXY[0]; p[0]++) {
+		for (p[1] = minXY[1]; p[1] <= maxXY[1]; p[1]++) {
+			for (p[0] = minXY[0]; p[0] <= maxXY[0]; p[0]++) {
 				float w0 = EdgeFunction(v1, v2, p);
 				float w1 = EdgeFunction(v2, v0, p);
 				float w2 = EdgeFunction(v0, v1, p);
@@ -101,6 +101,7 @@ void FrameBuffer::DrawTriangles(fvec4 v0, fvec4 v1, fvec4 v2, fvec4* color, uint
 				if (w0 >= 0 && w1 >= 0 && w2 >= 0) {
 					float area = EdgeFunction(v0, v1, v2);
 					w0 /= area; w1 /= area; w2 /= area;
+					//Interpolate Color & Depth in Screen Space
 					fvec4 c = color[0] * w0 + color[1] * w1 + color[2] * w2;
 					p.z = v0.z * w0 + v1.z * w1 + v2.z * w2;
 					SetPixel(p, c);
@@ -131,7 +132,7 @@ void FrameBuffer::DrawMesh(Camera* cam, Mesh* mesh, uint mode)
 		fvec4 _v0 = ConvToScreenSpace(v0.p);
 		fvec4 _v1 = ConvToScreenSpace(v1.p);
 		fvec4 _v2 = ConvToScreenSpace(v2.p);
-		fvec4* colors = new fvec4[3]{ mesh->material.color, mesh->material.color, mesh->material.color };
+		fvec4* colors = new fvec4[3]{ v0.c, v1.c, v2.c };
 		DrawTriangles(_v0, _v1, _v2, colors, mode);
 	}
 	glDrawPixels(w, h, GL_RGBA, GL_UNSIGNED_BYTE, pixels);

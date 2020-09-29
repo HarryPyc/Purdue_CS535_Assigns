@@ -7,15 +7,22 @@ class Camera
 public:
 	Mat4 P, V;
 
-	Camera(fvec4 pos, fvec4 target, fvec4 up, float fovy, float aspect, float zNear, float zFar);
+	Camera(fvec4 pos, fvec4 target, fvec4 up, float fov, float aspect, float zNear, float zFar);
 	Camera() {};
+	void Pan(float angle);
+	void Tilt(float angle);
+	void Roll(float angle);
+	void TranslateCamera(fvec4 t);
+	void SetFocalLength(float l);
+	fvec4 Projection(fvec4 v);
+
 	void UpdateP();
 	void UpdateV();
 	fvec4 pos, dir, up;
-	float fovy, aspect, zNear, zFar;
+	float fov, aspect, zNear, zFar;
 
 	void SaveAsTxt(const std::string fileName);
 	void LoadFromTxt(const std::string fileName);
-	void Interpolate(Camera* tCam, int i, int n);
+	void Interpolate(Camera* Cam0, Camera* Cam1, int i, int n);
 };
 
