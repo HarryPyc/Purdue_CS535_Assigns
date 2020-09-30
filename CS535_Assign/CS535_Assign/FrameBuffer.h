@@ -16,7 +16,7 @@ public:
 	void ClearZBuffer();
 	void SetPixel(fvec4 pix, fvec4 color);
 	void Draw2DSegements(fvec4 a, fvec4 b, Vertex vw0, Vertex vw1);
-	void DrawTriangles(fvec4 v0, fvec4 v1, fvec4 v2, Vertex vw0, Vertex vw1, Vertex vw2, Texture* tex, uint mode);
+	void DrawTriangles(fvec4 v0, fvec4 v1, fvec4 v2, Vertex vw0, Vertex vw1, Vertex vw2, Texture* tex, Camera *cam, uint mode);
 	void DrawMesh(Camera* cam, Mesh* mesh, uint mode);
 
 	void SaveAsBmp(const char* fname);

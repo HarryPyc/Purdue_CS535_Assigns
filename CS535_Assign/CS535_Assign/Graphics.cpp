@@ -20,10 +20,11 @@ Graphics::Graphics(int _width, int _height)
 	
 	cam = new Camera(fvec4(0, 5, 8, 1), fvec4(0), fvec4(0, 1, 0, 0), 60.f, float(w) / float(h), 0.1f, 100.f);
 
-	Mesh* Cube = new Mesh(); Cube->LoadObj("asset/model/cube.obj"); Cube->material.color = fvec4(1);
+	//Mesh* Cube = new Mesh(); Cube->LoadObj("asset/model/cube.obj"); Cube->material.color = fvec4(1);
+	//Cube->texture = new Texture("asset/texture/Cube_tex.jpg");
+	//meshList.push_back(Cube);
 	Mesh* Fish = new Mesh(); Fish->LoadObj("asset/model/Amago0.obj"); Fish->material.color = fvec4(1); Fish->S = Scale(fvec4(20, 20, 20, 1));
-
-	Fish->texture = new Texture("asset/model/Amago0.bmp");
+	Fish->texture = new Texture("asset/texture/AmagoT.bmp");
 	meshList.push_back(Fish);
 	//Mesh* Cube1 = new Mesh(*Cube); Cube1->material.color = fvec4(1, 0, 0, 1); Cube1->T = Translate(fvec4(2, 0, 0, 0));
 	//Mesh* Cube2 = new Mesh(*Cube); Cube2->material.color = fvec4(0, 1, 0, 1); Cube2->T = Translate(fvec4(-2, 0, 0, 0));
@@ -45,7 +46,7 @@ Graphics::~Graphics() {
 void Graphics::run()
 {
 	Camera* cam0 = new Camera(*cam);
-	Camera* cam1 = new Camera(fvec4(0, -5, 8, 1), fvec4(0), fvec4(0, 1, 0, 0), 60.f, float(w) / float(h), 0.1f, 100.f);
+	Camera* cam1 = new Camera(fvec4(0, -5, 5, 1), fvec4(0), fvec4(0, 1, 0, 0), 60.f, float(w) / float(h), 0.1f, 100.f);
 	float angle = 0.f; int frames = 0;
 	while (!glfwWindowShouldClose(window))
 	{

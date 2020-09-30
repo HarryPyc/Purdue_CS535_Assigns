@@ -81,7 +81,17 @@ inline float EdgeFunction(fvec4 a, fvec4 b, fvec4 p) {
 	return (p[0] - b[0]) * (a[1] - b[1]) - (p[1] - b[1]) * (a[0] - b[0]);
 }
 
-void FrameBuffer::DrawTriangles(fvec4 v0, fvec4 v1, fvec4 v2, Vertex vw0, Vertex vw1, Vertex vw2, Texture* tex, uint mode)
+inline fvec4 WorldSpaceInterpolation(fvec4 A, fvec4 B, fvec4 C, fvec4 P) {
+	fvec4 AB = B - A, AC = C - A, AP = P - A, N = Cross(AB, AC);
+	float DotNN = Dot(N, N);
+	fvec4 uvw;
+	uvw[1] = Dot(Cross(AP, AC), N) / DotNN;
+	uvw[2] = Dot(Cross(AB, AP), N) / DotNN;
+	uvw[0] = 1.f - uvw[1] - uvw[2];
+	return uvw;
+}
+
+void FrameBuffer::DrawTriangles(fvec4 v0, fvec4 v1, fvec4 v2, Vertex vw0, Vertex vw1, Vertex vw2, Texture* tex, Camera* cam, uint mode)
 {
 	if (mode == DRAW_LINES) {
 		Draw2DSegements(v0, v1, vw0, vw1);
@@ -91,10 +101,10 @@ void FrameBuffer::DrawTriangles(fvec4 v0, fvec4 v1, fvec4 v2, Vertex vw0, Vertex
 	else if (mode == DRAW_FILL) {
 		float* minXY = new float[2], * maxXY = new float[2];
 		//Clip
-		minXY[0] = max(min(min(v0[0], v1[0]), v2[0]), 0.f);
-		minXY[1] = max(min(min(v0[1], v1[1]), v2[1]), 0.f);
-		maxXY[0] = min(max(max(v0[0], v1[0]), v2[0]), float(w));
-		maxXY[1] = min(max(max(v0[1], v1[1]), v2[1]), float(h));
+		minXY[0] = round(max(min(min(v0[0], v1[0]), v2[0]), 0.f));
+		minXY[1] = round(max(min(min(v0[1], v1[1]), v2[1]), 0.f));
+		maxXY[0] = round(min(max(max(v0[0], v1[0]), v2[0]), float(w)));
+		maxXY[1] = round(min(max(max(v0[1], v1[1]), v2[1]), float(h)));
 		fvec4 p;
 
 		for (p[1] = minXY[1]; p[1] <= maxXY[1]; p[1]++) {
@@ -106,14 +116,19 @@ void FrameBuffer::DrawTriangles(fvec4 v0, fvec4 v1, fvec4 v2, Vertex vw0, Vertex
 				if (w0 >= 0 && w1 >= 0 && w2 >= 0) {
 					float area = EdgeFunction(v0, v1, v2);
 					w0 /= area; w1 /= area; w2 /= area;
-					//Interpolate Color & Depth in Screen Space
-					fvec4 c = color[0] * w0 + color[1] * w1 + color[2] * w2;
 					p.z = v0.z * w0 + v1.z * w1 + v2.z * w2;
+					p.w = v0.w * w0 + v1.w * w1 + v2.w * w2;
+
+					fvec4 worldPos = cam->InverseProjection(p, w, h);
+					fvec4 uvw = WorldSpaceInterpolation(vw0.p, vw1.p, vw2.p, worldPos);
+					float u = vw0.u * uvw[0] + vw1.u * uvw[1] + vw2.u * uvw[2];
+					float v = vw0.v * uvw[0] + vw1.v * uvw[1] + vw2.v * uvw[2];
+					fvec4 c = tex->Fetch(u, v);
 					SetPixel(p, c);
 				}
 			}
 		}
-		delete[] minXY, maxXY;
+		delete[] minXY, delete[] maxXY;
 	}
 }
 
@@ -123,6 +138,8 @@ void FrameBuffer::DrawMesh(Camera* cam, Mesh* mesh, uint mode)
 	const int n = mesh->GetIndexSize();
 	Mat4 PV = cam->P * cam->V;
 	mesh->UploadVertex();
+
+
 #ifdef MULTI_PROCESS
 #pragma omp parallel for
 #endif 
@@ -136,8 +153,7 @@ void FrameBuffer::DrawMesh(Camera* cam, Mesh* mesh, uint mode)
 		vs0 = ConvToScreenSpace(PV * v0.p);
 		vs1 = ConvToScreenSpace(PV * v1.p);
 		vs2 = ConvToScreenSpace(PV * v2.p);
-		fvec4* colors = new fvec4[3]{ mesh->material.color, mesh->material.color, mesh->material.color };
-		DrawTriangles(vs0, vs1, vs2, v0, v1, v2, mesh->texture,  mode);
+		DrawTriangles(vs0, vs1, vs2, v0, v1, v2, mesh->texture, cam, mode);
 	}
 	glDrawPixels(w, h, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 }
@@ -146,10 +162,11 @@ void FrameBuffer::DrawMesh(Camera* cam, Mesh* mesh, uint mode)
 
 fvec4 FrameBuffer::ConvToScreenSpace(fvec4 p)
 {
-	p = p / p.w;//Perspective Division
+	//Perspective Division
+	p.z = p.z / p.w;
 	//p.z = log(p.z);
-	p.x = (p.x + 1.f) / 2.f * w;
-	p.y = (p.y + 1.f) / 2.f * h;
+	p.x = (p.x/p.w + 1.f) / 2.f * w;
+	p.y = (p.y/p.w + 1.f) / 2.f * h;
 	return p;
 }
 

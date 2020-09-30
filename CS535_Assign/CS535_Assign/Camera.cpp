@@ -45,14 +45,24 @@ fvec4 Camera::Projection(fvec4 v)
 	return P*V*v;
 }
 
+fvec4 Camera::InverseProjection(fvec4 screenPos, float w, float h)
+{
+	screenPos.x = ((screenPos.x / w) * 2.f - 1.f) * screenPos.w;
+	screenPos.y = ((screenPos.y / h) * 2.f - 1.f) * screenPos.w;
+	screenPos.z *= screenPos.w;
+	return screenPos * InversePV;
+}
+
 void Camera::UpdateP()
 {
 	P = Perspective(fov, aspect, zNear, zFar);
+	InversePV = Inverse(Transpose(P * V));
 }
 
 void Camera::UpdateV()
 {
 	V = LookAt(pos, pos+dir, up);
+	InversePV = Inverse(Transpose(P * V));
 }
 
 void Camera::SaveAsTxt(const std::string fileName)

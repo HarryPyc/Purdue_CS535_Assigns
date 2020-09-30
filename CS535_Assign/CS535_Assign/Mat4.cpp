@@ -87,6 +87,16 @@ float Mat4::Determinant()
 }
 
 
+fvec4 operator*(fvec4 v, Mat4 m)
+{
+	return fvec4(
+		Dot(v, m.GetColumn(0)),
+		Dot(v, m.GetColumn(1)),
+		Dot(v, m.GetColumn(2)),
+		Dot(v, m.GetColumn(3))
+	);
+}
+
 Mat4 Transpose(Mat4 m)
 {
 	return Mat4(fvec4(m[0][0], m[1][0], m[2][0], m[3][0]),

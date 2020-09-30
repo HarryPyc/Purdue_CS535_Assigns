@@ -8,6 +8,7 @@ public:
 	fvec4 rows[4]; 
 
 	Mat4() {}
+	~Mat4() {}
 	Mat4(float val);
 	Mat4(fvec4 v1, fvec4 v2, fvec4 v3, fvec4 v4);
 
@@ -15,6 +16,7 @@ public:
 
 	fvec4 operator*(fvec4 v);
 	Mat4 operator*(Mat4 m2);
+
 	Mat4 operator*(const float& scalar);
 	friend std::ostream& operator<<(std::ostream& ostr, Mat4 m) {
 		return ostr << m[0] << std::endl << m[1] << std::endl << m[2] << std::endl << m[3] << std::endl;
@@ -27,7 +29,7 @@ public:
 
 
 };
-
+ fvec4 operator*(fvec4 v, Mat4 m);
  Mat4 Transpose(Mat4 m);
  Mat4 Inverse(Mat4 m);
  Mat4 Perspective(float fovy, float aspect, float zNear, float zFar);

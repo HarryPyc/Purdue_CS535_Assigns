@@ -5,7 +5,7 @@ using namespace std;
 class Camera
 {
 public:
-	Mat4 P, V;
+	Mat4 P, V, InversePV;
 
 	Camera(fvec4 pos, fvec4 target, fvec4 up, float fov, float aspect, float zNear, float zFar);
 	Camera() {};
@@ -15,6 +15,7 @@ public:
 	void TranslateCamera(fvec4 t);
 	void SetFocalLength(float l);
 	fvec4 Projection(fvec4 v);
+	fvec4 InverseProjection(fvec4 screenPos, float w, float h);
 
 	void UpdateP();
 	void UpdateV();

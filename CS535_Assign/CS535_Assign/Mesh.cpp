@@ -84,83 +84,83 @@ void Mesh::LoadObj(const string& path)
 
 void Mesh::LoadBin(char* fname) {
 
-	ifstream ifs(fname, ios::binary);
-	if (ifs.fail()) {
-		cerr << "INFO: cannot open file: " << fname << endl;
-		return;
-	}
-	int vertsN = 0;
-	fvec4* verts, * colors, * normals;
-	ifs.read((char*)&vertsN, sizeof(int));
-	char yn;
-	ifs.read(&yn, 1); // always xyz
-	if (yn != 'y') {
-		cerr << "INTERNAL ERROR: there should always be vertex xyz data" << endl;
-		return;
-	}
-	if (verts)
-		delete verts;
-	verts = new fvec4[vertsN];
+	//ifstream ifs(fname, ios::binary);
+	//if (ifs.fail()) {
+	//	cerr << "INFO: cannot open file: " << fname << endl;
+	//	return;
+	//}
+	//int vertsN = 0;
+	//fvec4* verts, * colors, * normals;
+	//ifs.read((char*)&vertsN, sizeof(int));
+	//char yn;
+	//ifs.read(&yn, 1); // always xyz
+	//if (yn != 'y') {
+	//	cerr << "INTERNAL ERROR: there should always be vertex xyz data" << endl;
+	//	return;
+	//}
+	//if (verts)
+	//	delete verts;
+	//verts = new fvec4[vertsN];
 
-	ifs.read(&yn, 1); // cols 3 floats
-	if (colors)
-		delete colors;
-	colors = 0;
-	if (yn == 'y') {
-		colors = new fvec4[vertsN];
-	}
+	//ifs.read(&yn, 1); // cols 3 floats
+	//if (colors)
+	//	delete colors;
+	//colors = 0;
+	//if (yn == 'y') {
+	//	colors = new fvec4[vertsN];
+	//}
 
-	ifs.read(&yn, 1); // normals 3 floats
-	if (normals)
-		delete normals;
-	normals = 0;
-	if (yn == 'y') {
-		normals = new fvec4[vertsN];
-	}
+	//ifs.read(&yn, 1); // normals 3 floats
+	//if (normals)
+	//	delete normals;
+	//normals = 0;
+	//if (yn == 'y') {
+	//	normals = new fvec4[vertsN];
+	//}
 
-	ifs.read(&yn, 1); // texture coordinates 2 floats
-	float* tcs = 0; // don't have texture coordinates for now
-	if (tcs)
-		delete tcs;
-	tcs = 0;
-	if (yn == 'y') {
-		tcs = new float[vertsN * 2];
-	}
+	//ifs.read(&yn, 1); // texture coordinates 2 floats
+	//float* tcs = 0; // don't have texture coordinates for now
+	//if (tcs)
+	//	delete tcs;
+	//tcs = 0;
+	//if (yn == 'y') {
+	//	tcs = new float[vertsN * 2];
+	//}
 
-	ifs.read((char*)verts, vertsN * 3 * sizeof(float)); // load verts
+	//ifs.read((char*)verts, vertsN * 3 * sizeof(float)); // load verts
 
-	if (colors) {
-		ifs.read((char*)colors, vertsN * 3 * sizeof(float)); // load cols
-	}
+	//if (colors) {
+	//	ifs.read((char*)colors, vertsN * 3 * sizeof(float)); // load cols
+	//}
 
-	if (normals)
-		ifs.read((char*)normals, vertsN * 3 * sizeof(float)); // load normals
+	//if (normals)
+	//	ifs.read((char*)normals, vertsN * 3 * sizeof(float)); // load normals
 
-	if (tcs)
-		ifs.read((char*)tcs, vertsN * 2 * sizeof(float)); // load texture coordinates
+	//if (tcs)
+	//	ifs.read((char*)tcs, vertsN * 2 * sizeof(float)); // load texture coordinates
 
-	ifs.read((char*)&trisN, sizeof(int));
-	if (indices)
-		delete indices;
-	indices = new unsigned int[trisN * 3];
-	ifs.read((char*)indices, trisN * 3 * sizeof(unsigned int)); // read tiangles
+	//ifs.read((char*)&trisN, sizeof(int));
+	//if (indices)
+	//	delete indices;
+	//indices = new unsigned int[trisN * 3];
+	//ifs.read((char*)indices, trisN * 3 * sizeof(unsigned int)); // read tiangles
 
-	ifs.close();
+	//ifs.close();
 
-	for (int i = 0; i < vertsN; i++) {
-		Vertex vert;
-		vert.p = verts[i];
-		if (colors)
-			vert.c = colors[i];
-		if (tcs)
-			vert.u = tcs[2 * i], vert.v = tcs[2 * i + 1];
-		if (normals)
-			vert.n = normals[i];
-		vertices.push_back(vert);
-	}
+	//for (int i = 0; i < vertsN; i++) {
+	//	Vertex vert;
+	//	vert.p = verts[i];
+	//	if (colors)
+	//		vert.c = colors[i];
+	//	if (tcs)
+	//		vert.u = tcs[2 * i], vert.v = tcs[2 * i + 1];
+	//	if (normals)
+	//		vert.n = normals[i];
+	//	vertices.push_back(vert);
+	//}
 
-	cerr << "INFO: loaded " << vertsN << " verts, " << trisN << " tris from " << endl << "      " << fname << endl;
-	cerr << "      xyz " << ((colors) ? "rgb " : "") << ((normals) ? "nxnynz " : "") << ((tcs) ? "tcstct " : "") << endl;
+	//cerr << "INFO: loaded " << vertsN << " verts, " << trisN << " tris from " << endl << "      " << fname << endl;
+	//cerr << "      xyz " << ((colors) ? "rgb " : "") << ((normals) ? "nxnynz " : "") << ((tcs) ? "tcstct " : "") << endl;
 
 }
 
