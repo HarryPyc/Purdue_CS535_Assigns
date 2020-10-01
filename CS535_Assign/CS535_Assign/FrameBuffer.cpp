@@ -6,24 +6,26 @@
 #include <stb_image_write.h>
 
 
-FrameBuffer::FrameBuffer(int _width, int _height)
+FrameBuffer::FrameBuffer(int _width, int _height) 
 {
-	w = _width; h = _height;
-	pixels = new unsigned int[w * h];
-	zBuffer = new float[w * h];
+	screen = new Texture(_width, _height, 4);
+	zBuffer = new float[_width * _height];
 	Clear(fvec4(0.f, 0.f, 0.f, 0.f));
 	ClearZBuffer();
+}
+
+FrameBuffer::~FrameBuffer()
+{
+	if (zBuffer != nullptr)
+		delete[] zBuffer;
+	if (screen != nullptr)
+		delete screen;
 }
 
 
 void FrameBuffer::Clear(fvec4 color)
 {
-	const uint c = convVec4ToRGBA8(color);
-#ifdef MULTI_PROCESS
-#pragma omp parallel for
-#endif 
-	for (int i = 0; i < w * h; i++)
-		pixels[i] = c;
+	screen->Clear(color);
 }
 
 void FrameBuffer::ClearZBuffer()
@@ -31,14 +33,14 @@ void FrameBuffer::ClearZBuffer()
 #ifdef MULTI_PROCESS
 #pragma omp parallel for
 #endif 
-	for (int i = 0; i < w * h; i++)
+	for (int i = 0; i < screen->w * screen->h; i++)
 		zBuffer[i] = 999.f;
 }
 
 inline bool FrameBuffer::DepthTest(int x, int y, float z)
 {
-	if (z < zBuffer[y * w + x]) {
-		zBuffer[y * w + x] = z;
+	if (z < zBuffer[y *screen->w + x]) {
+		zBuffer[y * screen->w + x] = z;
 		return true;
 	}
 	return false;
@@ -47,14 +49,12 @@ inline bool FrameBuffer::DepthTest(int x, int y, float z)
 void FrameBuffer::SetPixel(fvec4 pix, fvec4 color)
 {
 	int x = pix.x, y = pix.y;
-	const int index = y * w + x;
-	
-	if (x < 0 || y < 0 || x >= w || y >= h) {
+	if (x < 0 || y < 0 || x >= screen->w || y >= screen->h) {
 		//cout << "Index out of range of Pixels" << endl;
 		return;
 	}
 	if(DepthTest(x,y,pix.z))
-		*(pixels + index) = convVec4ToRGBA8(color);
+		screen->SetPixel(x, y, color);
 }
 
 
@@ -103,8 +103,8 @@ void FrameBuffer::DrawTriangles(fvec4 v0, fvec4 v1, fvec4 v2, Vertex vw0, Vertex
 		//Clip
 		minXY[0] = round(max(min(min(v0[0], v1[0]), v2[0]), 0.f));
 		minXY[1] = round(max(min(min(v0[1], v1[1]), v2[1]), 0.f));
-		maxXY[0] = round(min(max(max(v0[0], v1[0]), v2[0]), float(w)));
-		maxXY[1] = round(min(max(max(v0[1], v1[1]), v2[1]), float(h)));
+		maxXY[0] = round(min(max(max(v0[0], v1[0]), v2[0]), float(screen->w)));
+		maxXY[1] = round(min(max(max(v0[1], v1[1]), v2[1]), float(screen->h)));
 		fvec4 p;
 
 		for (p[1] = minXY[1]; p[1] <= maxXY[1]; p[1]++) {
@@ -119,12 +119,18 @@ void FrameBuffer::DrawTriangles(fvec4 v0, fvec4 v1, fvec4 v2, Vertex vw0, Vertex
 					p.z = v0.z * w0 + v1.z * w1 + v2.z * w2;
 					p.w = v0.w * w0 + v1.w * w1 + v2.w * w2;
 
-					fvec4 worldPos = cam->InverseProjection(p, w, h);
+					fvec4 worldPos = cam->InverseProjection(p, screen->w, screen->h);
 					fvec4 uvw = WorldSpaceInterpolation(vw0.p, vw1.p, vw2.p, worldPos);
 					float u = vw0.u * uvw[0] + vw1.u * uvw[1] + vw2.u * uvw[2];
 					float v = vw0.v * uvw[0] + vw1.v * uvw[1] + vw2.v * uvw[2];
 					fvec4 c = tex->Fetch(u, v);
-					SetPixel(p, c);
+
+					fvec4 n = vw0.n * uvw[0] + vw1.n * uvw[1] + vw2.n * uvw[2];
+					fvec4 lightColor;
+					for (int i = 0; i < MainScene->lightList.size(); i++) {
+						lightColor = lightColor + MainScene->lightList[i].PhongLighting(worldPos, n, 0.2f, 2.0f, 2.0f, 10.0f, cam->pos);
+					}
+					SetPixel(p, c * lightColor);
 				}
 			}
 		}
@@ -138,8 +144,6 @@ void FrameBuffer::DrawMesh(Camera* cam, Mesh* mesh, uint mode)
 	const int n = mesh->GetIndexSize();
 	Mat4 PV = cam->P * cam->V;
 	mesh->UploadVertex();
-
-
 #ifdef MULTI_PROCESS
 #pragma omp parallel for
 #endif 
@@ -155,8 +159,9 @@ void FrameBuffer::DrawMesh(Camera* cam, Mesh* mesh, uint mode)
 		vs2 = ConvToScreenSpace(PV * v2.p);
 		DrawTriangles(vs0, vs1, vs2, v0, v1, v2, mesh->texture, cam, mode);
 	}
-	glDrawPixels(w, h, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 }
+
+
 
 
 
@@ -165,24 +170,8 @@ fvec4 FrameBuffer::ConvToScreenSpace(fvec4 p)
 	//Perspective Division
 	p.z = p.z / p.w;
 	//p.z = log(p.z);
-	p.x = (p.x/p.w + 1.f) / 2.f * w;
-	p.y = (p.y/p.w + 1.f) / 2.f * h;
+	p.x = (p.x/p.w + 1.f) / 2.f * screen->w;
+	p.y = (p.y/p.w + 1.f) / 2.f * screen->h;
 	return p;
 }
 
-
-void FrameBuffer::SaveAsBmp(const char* fname) {
-	unsigned char* p = new unsigned char[w * h * 4];
-#ifdef MULTI_PROCESS
-#pragma omp parallel for
-#endif 
-	for (int i = 0; i < w * h; i++) {
-		fvec4 color = convRGBA8ToVec4(pixels[i]);
-		p[4 * i + 0] = (char)color.r;
-		p[4 * i + 1] = (char)color.g;
-		p[4 * i + 2] = (char)color.b;
-		p[4 * i + 3] = (char)color.a;
-	}
-	stbi_write_bmp(fname, w, h, 4, pixels);
-	delete[] p;
-}

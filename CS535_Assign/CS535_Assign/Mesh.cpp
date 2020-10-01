@@ -13,13 +13,13 @@ uint Mesh::GetIndex(int i)
 void Mesh::UploadVertex()
 {
 	//Transform the vertices
-	Mat4 M = T * R * S;
+	Mat4 M = T * R * S, TrpsInvtM = Transpose(Inverse(M));
 	if (vertices.size() == 0) {
 		for (int i = 0; i < data.vertex.size()/3; i ++) {
 			Vertex vert;
 			vert.p = M * fvec4(data.vertex[3*i], data.vertex[3*i + 1], data.vertex[3*i + 2], 1.f);
-			UploadAABB(vert.p);
-			vert.n = Normalize(Transpose(Inverse(M)) * fvec4(data.normal[3*i], data.vertex[3*i + 1], data.vertex[3*i + 2], 1.f));
+			//UploadAABB(vert.p);
+			vert.n = Normalize(TrpsInvtM * fvec4(data.normal[3*i], data.normal[3*i + 1], data.normal[3*i + 2], 0.f));
 			if (data.texCoord.size() > 0)
 				vert.u = data.texCoord[2 * i], vert.v = data.texCoord[2 * i + 1];
 			vert.c = material.color;
@@ -32,8 +32,8 @@ void Mesh::UploadVertex()
 #endif //  MULTI_PROCESS
 		for (int i = 0; i < vertices.size(); i++) {
 			vertices[i].p = M * fvec4(data.vertex[3 * i], data.vertex[3 * i + 1], data.vertex[3 * i + 2], 1.f);
-			UploadAABB(vertices[i].p);
-			vertices[i].n = Normalize(Transpose(Inverse(M)) * fvec4(data.normal[3 * i], data.vertex[3 * i + 1], data.vertex[3 * i + 2], 1.f));
+			//UploadAABB(vertices[i].p);
+			vertices[i].n = Normalize(TrpsInvtM * fvec4(data.normal[3 * i], data.normal[3 * i + 1], data.normal[3 * i + 2], 0.f));
 		}
 	}
 }
@@ -73,7 +73,7 @@ Mesh::Mesh()
 	T = Translate(fvec4(0.f));
 	S = Scale(fvec4(1.f));
 	minAABB.w = 1.f, maxAABB.w = 1.f;
-	texture = 0;
+	
 }
 
 

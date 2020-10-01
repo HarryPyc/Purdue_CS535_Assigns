@@ -5,12 +5,12 @@
 #include "Mesh.h"
 #include "Define.h"
 #include "Texture.h"
+#include "Scene.h"
 
 
 class FrameBuffer
 {
 public:
-	int w, h;
 
 	void Clear(fvec4 color);
 	void ClearZBuffer();
@@ -19,13 +19,11 @@ public:
 	void DrawTriangles(fvec4 v0, fvec4 v1, fvec4 v2, Vertex vw0, Vertex vw1, Vertex vw2, Texture* tex, Camera *cam, uint mode);
 	void DrawMesh(Camera* cam, Mesh* mesh, uint mode);
 
-	void SaveAsBmp(const char* fname);
-
 	FrameBuffer(int _width, int _height);
-	~FrameBuffer() { delete[] pixels, zBuffer; }
+	~FrameBuffer();
+	Texture *screen;
 
 private:
-	unsigned int *pixels;
 	float* zBuffer;
 
 	inline bool DepthTest(int x, int y, float z);

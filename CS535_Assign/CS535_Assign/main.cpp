@@ -6,7 +6,7 @@
 #include "Mat4.h"
 #define GLEW_STATIC
 
-const int WINDOW_WIDTH = 1280, WINDOW_HEIGHT = 720;
+
 
 void error_callback(int error, const char* description)
 {
@@ -27,7 +27,7 @@ int main(int argc, char** argv) {
 
 	glfwSetErrorCallback(error_callback);
 
-	Graphics* graphics = new Graphics(WINDOW_WIDTH, WINDOW_HEIGHT);
+	Graphics* graphics = new Graphics();
 	printGlInfo();
 
 	graphics->run();

@@ -166,6 +166,8 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Mat4.cpp" />
     <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="PointLight.cpp" />
+    <ClCompile Include="Scene.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Vec4.cpp" />
   </ItemGroup>
@@ -177,6 +179,8 @@
     <ClInclude Include="Mat4.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="ObjLoad.h" />
+    <ClInclude Include="PointLight.h" />
+    <ClInclude Include="Scene.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Vec4.h" />
   </ItemGroup>

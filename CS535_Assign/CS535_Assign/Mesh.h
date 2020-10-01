@@ -29,7 +29,7 @@ public:
 	void SetCenterAndScale(fvec4 center, fvec4 s);
 
 	Material material;
-	Texture* texture;
+	Texture *texture;
 	Mat4 R, T, S;
 	fvec4 minAABB, maxAABB;
 	unsigned int *indices;
@@ -39,7 +39,7 @@ public:
 	void LoadObj(const string& path);
 	void LoadBin(char* fname);
 	Mesh();
-	~Mesh() { delete texture; }
+	~Mesh() { }
 private:
 	obj::Model data;
 	fvec4 centroid;

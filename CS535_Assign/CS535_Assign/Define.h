@@ -1,4 +1,5 @@
 #pragma once
+const int WINDOW_WIDTH = 1280, WINDOW_HEIGHT = 720;
 #define MULTI_PROCESS
 #define DRAW_FILL 0x00000000
 #define DRAW_LINES 0x00000001
