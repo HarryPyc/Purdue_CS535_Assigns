@@ -16,11 +16,13 @@ public:
 	void SetPixel(unsigned int x, unsigned int y, fvec4 color);
 	void Draw();
 	void SaveAsBmp(const char* fname);
+	inline fvec4 GetPixel(unsigned int x, unsigned int y);
 	~Texture();
 
 	fvec4 Fetch(float u, float v);
 	int w, h, components;
 private:
 	unsigned int* pixels;
+
 };
 

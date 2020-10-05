@@ -91,7 +91,7 @@ inline fvec4 WorldSpaceInterpolation(fvec4 A, fvec4 B, fvec4 C, fvec4 P) {
 	return uvw;
 }
 
-void FrameBuffer::DrawTriangles(fvec4 v0, fvec4 v1, fvec4 v2, Vertex vw0, Vertex vw1, Vertex vw2, Texture* tex, Camera* cam, uint mode)
+void FrameBuffer::DrawTriangles(fvec4 v0, fvec4 v1, fvec4 v2, Vertex vw0, Vertex vw1, Vertex vw2, Texture* tex, Camera* cam, uint mode, bool light)
 {
 	if (mode == DRAW_LINES) {
 		Draw2DSegements(v0, v1, vw0, vw1);
@@ -121,16 +121,23 @@ void FrameBuffer::DrawTriangles(fvec4 v0, fvec4 v1, fvec4 v2, Vertex vw0, Vertex
 
 					fvec4 worldPos = cam->InverseProjection(p, screen->w, screen->h);
 					fvec4 uvw = WorldSpaceInterpolation(vw0.p, vw1.p, vw2.p, worldPos);
-					float u = vw0.u * uvw[0] + vw1.u * uvw[1] + vw2.u * uvw[2];
-					float v = vw0.v * uvw[0] + vw1.v * uvw[1] + vw2.v * uvw[2];
-					fvec4 c = tex->Fetch(u, v);
+					fvec4 c;
+					if (tex != nullptr) {
+						float u = vw0.u * uvw[0] + vw1.u * uvw[1] + vw2.u * uvw[2];
+						float v = vw0.v * uvw[0] + vw1.v * uvw[1] + vw2.v * uvw[2];
+						c = tex->Fetch(u, v);
+					}else
+						c = vw0.c * uvw[0] + vw1.c * uvw[1] + vw2.c * uvw[2];
 
-					fvec4 n = vw0.n * uvw[0] + vw1.n * uvw[1] + vw2.n * uvw[2];
-					fvec4 lightColor;
-					for (int i = 0; i < MainScene->lightList.size(); i++) {
-						lightColor = lightColor + MainScene->lightList[i].PhongLighting(worldPos, n, 0.2f, 2.0f, 2.0f, 10.0f, cam->pos);
-					}
-					SetPixel(p, c * lightColor);
+					if (light) {
+						fvec4 n = vw0.n * uvw[0] + vw1.n * uvw[1] + vw2.n * uvw[2];
+						fvec4 lightColor;
+						for (int i = 0; i < MainScene->lightList.size(); i++) {
+							lightColor = lightColor + MainScene->lightList[i].PhongLighting(worldPos, n, 0.2f, 2.0f, 2.0f, 10.0f, cam->pos);
+						}
+						SetPixel(p, c * lightColor);
+					}else
+						SetPixel(p, c );
 				}
 			}
 		}
@@ -138,6 +145,19 @@ void FrameBuffer::DrawTriangles(fvec4 v0, fvec4 v1, fvec4 v2, Vertex vw0, Vertex
 	}
 }
 
+inline bool ClipTest(fvec4 p) {
+	const float s = 10.f;
+	return (p.x <= s*p.w && p.x >= -s*p.w) && (p.y <= s*p.w && p.y >= -s*p.w) && (p.z <= s*p.w && p.z >= -s*p.w);
+}
+inline fvec4 FrameBuffer::PerspectiveDevide(fvec4 p)
+{
+	//Perspective Division
+	p.z = p.z / p.w;
+	//p.z = log(p.z);
+	p.x = (p.x / p.w + 1.f) / 2.f * screen->w;
+	p.y = (p.y / p.w + 1.f) / 2.f * screen->h;
+	return p;
+}
 
 void FrameBuffer::DrawMesh(Camera* cam, Mesh* mesh, uint mode)
 {
@@ -152,12 +172,14 @@ void FrameBuffer::DrawMesh(Camera* cam, Mesh* mesh, uint mode)
 		Vertex v1 = mesh->vertices[mesh->GetIndex(i+1)];
 		Vertex v2 = mesh->vertices[mesh->GetIndex(i+2)];
 		//Screen space
-		fvec4 vs0, vs1, vs2;
-		//Transform and Projection
-		vs0 = ConvToScreenSpace(PV * v0.p);
-		vs1 = ConvToScreenSpace(PV * v1.p);
-		vs2 = ConvToScreenSpace(PV * v2.p);
-		DrawTriangles(vs0, vs1, vs2, v0, v1, v2, mesh->texture, cam, mode);
+		fvec4 vs0 = PV * v0.p, vs1 = PV * v1.p, vs2 = PV * v2.p;
+		if (ClipTest(vs0) && ClipTest(vs1) && ClipTest(vs2)) {
+			//Transform and Projection
+			vs0 = PerspectiveDevide(vs0);
+			vs1 = PerspectiveDevide(vs1);
+			vs2 = PerspectiveDevide(vs2);
+			DrawTriangles(vs0, vs1, vs2, v0, v1, v2, mesh->texture, cam, mode, mesh->enableLight);
+		}
 	}
 }
 
@@ -165,13 +187,5 @@ void FrameBuffer::DrawMesh(Camera* cam, Mesh* mesh, uint mode)
 
 
 
-fvec4 FrameBuffer::ConvToScreenSpace(fvec4 p)
-{
-	//Perspective Division
-	p.z = p.z / p.w;
-	//p.z = log(p.z);
-	p.x = (p.x/p.w + 1.f) / 2.f * screen->w;
-	p.y = (p.y/p.w + 1.f) / 2.f * screen->h;
-	return p;
-}
+
 

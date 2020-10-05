@@ -35,6 +35,7 @@ public:
 	unsigned int *indices;
 	int trisN;
 	vector<Vertex> vertices;
+	bool enableLight;
 
 	void LoadObj(const string& path);
 	void LoadBin(char* fname);
