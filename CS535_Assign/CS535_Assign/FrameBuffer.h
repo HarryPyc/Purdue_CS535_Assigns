@@ -16,17 +16,18 @@ public:
 	void ClearZBuffer();
 	void SetPixel(fvec4 pix, fvec4 color);
 	void Draw2DSegements(fvec4 a, fvec4 b, Vertex vw0, Vertex vw1);
-	void DrawTriangles(fvec4 v0, fvec4 v1, fvec4 v2, Vertex vw0, Vertex vw1, Vertex vw2, Texture* tex, Camera *cam, uint mode, bool light);
-	void DrawMesh(Camera* cam, Mesh* mesh, uint mode);
+	void DrawTriangles(fvec4 v0, fvec4 v1, fvec4 v2, Vertex vw0, Vertex vw1, Vertex vw2, Texture* tex,  uint mode, bool light, FrameBuffer* shadowMap = NULL);
+	void DrawMesh(Mesh* mesh, FrameBuffer* shadowMap, uint mode);
 
-	FrameBuffer(int _width, int _height);
+	FrameBuffer(int _width, int _height, Camera *cam);
 	~FrameBuffer();
 	Texture *screen;
+	Camera* cam;
 
-private:
 	float* zBuffer;
 
 	inline bool DepthTest(int x, int y, float z);
+	inline float ShadowTest(fvec4 worldPos);
 	inline fvec4 PerspectiveDevide(fvec4 p);
 	//Transformed Vertices
 };

@@ -6,10 +6,11 @@
 #include <stb_image_write.h>
 
 
-FrameBuffer::FrameBuffer(int _width, int _height) 
+FrameBuffer::FrameBuffer(int _width, int _height, Camera *_cam) 
 {
 	screen = new Texture(_width, _height, 4);
 	zBuffer = new float[_width * _height];
+	cam = _cam;
 	Clear(fvec4(0.f, 0.f, 0.f, 0.f));
 	ClearZBuffer();
 }
@@ -44,6 +45,20 @@ inline bool FrameBuffer::DepthTest(int x, int y, float z)
 		return true;
 	}
 	return false;
+}
+
+inline float FrameBuffer::ShadowTest(fvec4 worldPos)
+{
+	fvec4 screenPos = cam->Projection(worldPos);
+	screenPos = PerspectiveDevide(screenPos);
+	const int x = screenPos.x, y = screenPos.y;
+	if(x < 0 || y < 0 || x >= screen->w || y >= screen->h)
+		return 1.0f;
+	const unsigned int index = y * screen->w + x;
+	if (abs(screenPos.z - zBuffer[index]) <= 1e-2)
+		return 1.f;
+	else
+		return 0.f;
 }
 
 void FrameBuffer::SetPixel(fvec4 pix, fvec4 color)
@@ -91,7 +106,7 @@ inline fvec4 WorldSpaceInterpolation(fvec4 A, fvec4 B, fvec4 C, fvec4 P) {
 	return uvw;
 }
 
-void FrameBuffer::DrawTriangles(fvec4 v0, fvec4 v1, fvec4 v2, Vertex vw0, Vertex vw1, Vertex vw2, Texture* tex, Camera* cam, uint mode, bool light)
+void FrameBuffer::DrawTriangles(fvec4 v0, fvec4 v1, fvec4 v2, Vertex vw0, Vertex vw1, Vertex vw2, Texture* tex,  uint mode, bool light, FrameBuffer* shadowMap)
 {
 	if (mode == DRAW_LINES) {
 		Draw2DSegements(v0, v1, vw0, vw1);
@@ -128,12 +143,19 @@ void FrameBuffer::DrawTriangles(fvec4 v0, fvec4 v1, fvec4 v2, Vertex vw0, Vertex
 						c = tex->Fetch(u, v);
 					}else
 						c = vw0.c * uvw[0] + vw1.c * uvw[1] + vw2.c * uvw[2];
-
+					//Per fragment lighting
 					if (light) {
 						fvec4 n = vw0.n * uvw[0] + vw1.n * uvw[1] + vw2.n * uvw[2];
 						fvec4 lightColor;
+						//shadow
+						float shadow;
+						if (shadowMap != NULL) {
+							shadow = shadowMap->ShadowTest(worldPos);
+						}
+						else
+							shadow = 1.0f;
 						for (int i = 0; i < MainScene->lightList.size(); i++) {
-							lightColor = lightColor + MainScene->lightList[i].PhongLighting(worldPos, n, 0.2f, 2.0f, 2.0f, 10.0f, cam->pos);
+							lightColor = lightColor + MainScene->lightList[i].PhongLighting(worldPos, n, shadow, 0.1f, 2.0f, 2.0f, 10.0f, cam->pos);
 						}
 						SetPixel(p, c * lightColor);
 					}else
@@ -159,7 +181,7 @@ inline fvec4 FrameBuffer::PerspectiveDevide(fvec4 p)
 	return p;
 }
 
-void FrameBuffer::DrawMesh(Camera* cam, Mesh* mesh, uint mode)
+void FrameBuffer::DrawMesh( Mesh* mesh, FrameBuffer* shadowMap, uint mode)
 {
 	const int n = mesh->GetIndexSize();
 	Mat4 PV = cam->P * cam->V;
@@ -178,7 +200,7 @@ void FrameBuffer::DrawMesh(Camera* cam, Mesh* mesh, uint mode)
 			vs0 = PerspectiveDevide(vs0);
 			vs1 = PerspectiveDevide(vs1);
 			vs2 = PerspectiveDevide(vs2);
-			DrawTriangles(vs0, vs1, vs2, v0, v1, v2, mesh->texture, cam, mode, mesh->enableLight);
+			DrawTriangles(vs0, vs1, vs2, v0, v1, v2, mesh->texture, mode, mesh->enableLight, shadowMap);
 		}
 	}
 }

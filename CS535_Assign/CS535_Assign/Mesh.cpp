@@ -76,6 +76,11 @@ Mesh::Mesh()
 	enableLight = false;
 }
 
+Mesh::Mesh(const string& path) : Mesh()
+{
+	LoadObj(path);
+}
+
 
 void Mesh::LoadObj(const string& path)
 {

@@ -40,6 +40,7 @@ public:
 	void LoadObj(const string& path);
 	void LoadBin(char* fname);
 	Mesh();
+	Mesh(const string& path);
 	~Mesh() { }
 private:
 	obj::Model data;

@@ -11,7 +11,7 @@ inline fvec4 reflect(fvec4 l, fvec4 n) {
 PointLight::PointLight(fvec4 p, fvec4 c) : pos(p), color(c)
 {
 }
-fvec4 PointLight::PhongLighting(fvec4 p, fvec4 n, float Ka, float Kd, float Ks, float alpha, fvec4 camPos)
+fvec4 PointLight::PhongLighting(fvec4 p, fvec4 n, float shadow, float Ka, float Kd, float Ks, float alpha, fvec4 camPos)
 {
 	fvec4 l = pos - p;
 	const float att = attenuation(l.Length());
@@ -22,5 +22,5 @@ fvec4 PointLight::PhongLighting(fvec4 p, fvec4 n, float Ka, float Kd, float Ks, 
 	float diffFact = max(0.f, Dot(n, l)); 
 	float specFact = pow(max(0.f, Dot(r, v)), alpha);
 
-	return color * (Ka + att * (Kd * diffFact + Ks * specFact));
+	return color * (Ka + shadow * att * (Kd * diffFact + Ks * specFact));
 }

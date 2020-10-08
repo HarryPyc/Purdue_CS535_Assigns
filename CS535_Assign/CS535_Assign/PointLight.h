@@ -10,6 +10,6 @@ public:
 	PointLight(fvec4 p, fvec4 c);
 	~PointLight() {}
 
-	fvec4 PhongLighting(fvec4 p, fvec4 n, float Ka, float Kd, float Ks, float alpha, fvec4 camPos);
+	fvec4 PhongLighting(fvec4 p, fvec4 n, float shadow, float Ka, float Kd, float Ks, float alpha, fvec4 camPos);
 };
 
