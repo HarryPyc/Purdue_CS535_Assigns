@@ -107,7 +107,7 @@ void FrameBuffer::DrawTriangles(fvec4 v0, fvec4 v1, fvec4 v2, Vertex vw0, Vertex
 					float area = EdgeFunction(v0, v1, v2);
 					w0 /= area; w1 /= area; w2 /= area;
 					//Interpolate Color & Depth in Screen Space
-					fvec4 c = color[0] * w0 + color[1] * w1 + color[2] * w2;
+					fvec4 c = vw0.c * w0 + vw1.c * w1 + vw2.c * w2;
 					p.z = v0.z * w0 + v1.z * w1 + v2.z * w2;
 					SetPixel(p, c);
 				}
