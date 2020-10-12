@@ -72,13 +72,12 @@ fvec4 Texture::Fetch(float u, float v)
 {
 	if (!pixels)
 		return fvec4(1);
-	u = u * w, v = v * h;
+	u = abs(u * w), v = abs(v * h);
 	unsigned int x = floor(u), y = floor(v);
 	//Bilinear interpolation and tiling
 	float hor = abs(u - x), ver = abs(v - y);
 	
 	fvec4 color = (GetPixel(x, y) * (1 - hor) + GetPixel(x + 1, y) * hor) * (1 - ver) +
 		(GetPixel(x, y + 1) * (1 - hor) + GetPixel(x + 1, y + 1) * hor) * ver;
-	
 	return color;
 }

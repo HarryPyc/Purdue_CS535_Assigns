@@ -1,5 +1,9 @@
 #include "Graphics.h"
 #include <string>
+
+extern Scene* MainScene;
+extern bool ALPHA_BLEND;
+
 Graphics::Graphics()
 {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
@@ -26,27 +30,45 @@ Graphics::~Graphics() {
 
 void Graphics::run()
 {
-	Camera cam2(fvec4(2, 3, 2, 1), fvec4(0, 0, 0, 1), fvec4(0, 1, 0, 0), 100.f, float(WINDOW_WIDTH) / float(WINDOW_HEIGHT), 0.1f, 100.f);
-	FrameBuffer *fbo = new FrameBuffer(w, h, &MainScene->MainCamera), *shadowMap = new FrameBuffer(w, h, &cam2);
-
-	float angle = 0.f; int frames = 0;
+	FrameBuffer* fbo = new FrameBuffer(w, h, &MainScene->MainCamera);
+#ifdef SHOWSHADOEMAPPING
+	Camera Cam2(fvec4(0, 3, -1.5, 1), fvec4(0, 0, -1.5f, 1), fvec4(1, 0, 0, 0), 90.f, (float)w / (float)h, 0.1f, 100.f);
+	FrameBuffer* projector = new FrameBuffer(SHADOWRES, SHADOWRES, &Cam2, true);
+	MainScene->lightList[0].shadowMap = projector;
+#else
+	Camera Cam2(fvec4(0, 3, -1.5, 1), fvec4(0, 0, -1.5f, 1), fvec4(0, 0, -1, 0), 60.f, (float)w / (float)h, 0.1f, 100.f);
+	Texture proj("asset/texture/batmanlogo.jpg");
+	FrameBuffer* projector = new FrameBuffer(&proj, &Cam2);
+#endif // SHOWSHADOWMAPPING
+	int frames = 0;
 	while (!glfwWindowShouldClose(window))
 	{
 		fbo->Clear(fvec4(0.f, 0.f, 0.f, 1));
 		fbo->ClearZBuffer();
-		shadowMap->Clear(fvec4(0.35f, 0.35f, 0.35f, 1.0f));
-		shadowMap->ClearZBuffer();
+		projector->ClearZBuffer();
 
-		if (angle++ == 360.f) {
-			angle = 0.f;
+		for (int i = 0; i < MainScene->meshList.size(); i++) {
+			MainScene->meshList[i].UploadVertex();
 		}
 
 		for (int i = 0; i < MainScene->meshList.size(); i++) {
-			shadowMap->DrawMesh(&MainScene->meshList[i], NULL, DRAW_FILL);
-			fbo->DrawMesh(&MainScene->meshList[i], shadowMap, DRAW_FILL);
+			projector->DrawMesh(&MainScene->meshList[i], DRAW_FILL);
 		}
-		MainScene->meshList[0].R = Rotate(angle, fvec4(0, 1, 0, 0));
-		
+
+		for (int i = 0; i < MainScene->meshList.size(); i++) {
+#ifdef SHOWSHADOEMAPPING
+			fbo->DrawMesh(&MainScene->meshList[i], DRAW_FILL);
+#else
+			fbo->DrawMesh(&MainScene->meshList[i], DRAW_FILL, projector);
+#endif // SHOWSHADOWMAPPING
+		}
+
+#ifdef SHOWSHADOEMAPPING
+		MainScene->lightList[0].TranslateLight(fvec4(0, 0, 0.01f, 0));
+		MainScene->meshList[1].R = Rotate(frames, fvec4(0, 1, 0, 0));
+#else
+		Cam2.TranslateCamera(fvec4(0, 0, 0.01f, 0));
+#endif // SHOWSHADOWMAPPING
 
 		//string fname = "output/result" + to_string(frames) + ".bmp";
 		//fbo->screen->SaveAsBmp(fname.c_str());

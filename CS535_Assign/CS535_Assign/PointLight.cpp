@@ -10,6 +10,13 @@ inline fvec4 reflect(fvec4 l, fvec4 n) {
 }
 PointLight::PointLight(fvec4 p, fvec4 c) : pos(p), color(c)
 {
+	shadowMap = NULL;
+}
+void PointLight::TranslateLight(fvec4 t)
+{
+	pos = Translate(t) * pos;
+	if (shadowMap != NULL)
+		shadowMap->cam->TranslateCamera(t);
 }
 fvec4 PointLight::PhongLighting(fvec4 p, fvec4 n, float shadow, float Ka, float Kd, float Ks, float alpha, fvec4 camPos)
 {

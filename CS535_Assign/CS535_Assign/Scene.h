@@ -17,7 +17,5 @@ public:
 	~Scene();
 };
 
-Scene* InitMainScene();
 
-static Scene* MainScene = InitMainScene();
 

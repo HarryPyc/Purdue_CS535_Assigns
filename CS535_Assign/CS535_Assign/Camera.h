@@ -14,6 +14,7 @@ public:
 	void Roll(float angle);
 	void TranslateCamera(fvec4 t);
 	void SetFocalLength(float l);
+	void SetTarget(fvec4 target);
 	fvec4 Projection(fvec4 v);
 	fvec4 InverseProjection(fvec4 screenPos, float w, float h);
 

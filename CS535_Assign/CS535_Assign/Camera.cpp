@@ -40,6 +40,11 @@ void Camera::SetFocalLength(float l)
 	UpdateP();
 }
 
+void Camera::SetTarget(fvec4 target)
+{
+	dir = Normalize(target - pos);
+}
+
 fvec4 Camera::Projection(fvec4 v)
 {
 	return P*V*v;

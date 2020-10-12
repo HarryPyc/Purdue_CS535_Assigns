@@ -1,17 +1,31 @@
 #include "FrameBuffer.h"
+#include "Scene.h"
+#include "Mat4.h"
 #include <omp.h>
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image.h>
 #include <stb_image_write.h>
 
+extern Scene* MainScene;
+bool ALPHA_BLEND = false;
 
-FrameBuffer::FrameBuffer(int _width, int _height, Camera *_cam) 
+FrameBuffer::FrameBuffer(int _width, int _height, Camera *_cam, bool isDB) 
 {
 	screen = new Texture(_width, _height, 4);
 	zBuffer = new float[_width * _height];
 	cam = _cam;
+	isDepthBuffer = isDB;
 	Clear(fvec4(0.f, 0.f, 0.f, 0.f));
+	ClearZBuffer();
+}
+
+FrameBuffer::FrameBuffer(Texture* project, Camera* cam)
+{
+	screen = project;
+	zBuffer = new float[screen->w * screen->h];
+	this->cam = cam;
+	isDepthBuffer = true;
 	ClearZBuffer();
 }
 
@@ -47,15 +61,15 @@ inline bool FrameBuffer::DepthTest(int x, int y, float z)
 	return false;
 }
 
-inline float FrameBuffer::ShadowTest(fvec4 worldPos)
+inline float FrameBuffer::VisibilityTest(fvec4 worldPos)
 {
 	fvec4 screenPos = cam->Projection(worldPos);
 	screenPos = PerspectiveDevide(screenPos);
 	const int x = screenPos.x, y = screenPos.y;
 	if(x < 0 || y < 0 || x >= screen->w || y >= screen->h)
-		return 1.0f;
+		return 0.0f;
 	const unsigned int index = y * screen->w + x;
-	if (abs(screenPos.z - zBuffer[index]) <= 1e-2)
+	if (screenPos.z - zBuffer[index] <= 1e-2)
 		return 1.f;
 	else
 		return 0.f;
@@ -68,8 +82,13 @@ void FrameBuffer::SetPixel(fvec4 pix, fvec4 color)
 		//cout << "Index out of range of Pixels" << endl;
 		return;
 	}
-	if(DepthTest(x,y,pix.z))
+	if (DepthTest(x, y, pix.z)) {
+		const float alpha = color.a;
+		if (alpha < 1.0f && ALPHA_BLEND) {
+			color = screen->GetPixel(x, y) * (1 - alpha) + color * alpha;
+		}
 		screen->SetPixel(x, y, color);
+	}
 }
 
 
@@ -106,7 +125,7 @@ inline fvec4 WorldSpaceInterpolation(fvec4 A, fvec4 B, fvec4 C, fvec4 P) {
 	return uvw;
 }
 
-void FrameBuffer::DrawTriangles(fvec4 v0, fvec4 v1, fvec4 v2, Vertex vw0, Vertex vw1, Vertex vw2, Texture* tex,  uint mode, bool light, FrameBuffer* shadowMap)
+void FrameBuffer::DrawTriangles(fvec4 v0, fvec4 v1, fvec4 v2, Vertex vw0, Vertex vw1, Vertex vw2, Texture* tex,  uint mode, bool light, FrameBuffer* projector)
 {
 	if (mode == DRAW_LINES) {
 		Draw2DSegements(v0, v1, vw0, vw1);
@@ -118,8 +137,8 @@ void FrameBuffer::DrawTriangles(fvec4 v0, fvec4 v1, fvec4 v2, Vertex vw0, Vertex
 		//Clip
 		minXY[0] = round(max(min(min(v0[0], v1[0]), v2[0]), 0.f));
 		minXY[1] = round(max(min(min(v0[1], v1[1]), v2[1]), 0.f));
-		maxXY[0] = round(min(max(max(v0[0], v1[0]), v2[0]), float(screen->w)));
-		maxXY[1] = round(min(max(max(v0[1], v1[1]), v2[1]), float(screen->h)));
+		maxXY[0] = round(min(max(max(v0[0], v1[0]), v2[0]), float(screen->w)-1.f));
+		maxXY[1] = round(min(max(max(v0[1], v1[1]), v2[1]), float(screen->h)-1.f));
 		fvec4 p;
 
 		for (p[1] = minXY[1]; p[1] <= maxXY[1]; p[1]++) {
@@ -137,25 +156,40 @@ void FrameBuffer::DrawTriangles(fvec4 v0, fvec4 v1, fvec4 v2, Vertex vw0, Vertex
 					fvec4 worldPos = cam->InverseProjection(p, screen->w, screen->h);
 					fvec4 uvw = WorldSpaceInterpolation(vw0.p, vw1.p, vw2.p, worldPos);
 					fvec4 c;
+					if (isDepthBuffer) {
+						DepthTest(p.x, p.y, p.z);
+						continue;
+					}
 					if (tex != nullptr) {
 						float u = vw0.u * uvw[0] + vw1.u * uvw[1] + vw2.u * uvw[2];
 						float v = vw0.v * uvw[0] + vw1.v * uvw[1] + vw2.v * uvw[2];
 						c = tex->Fetch(u, v);
 					}else
 						c = vw0.c * uvw[0] + vw1.c * uvw[1] + vw2.c * uvw[2];
+					//Projective Texture Mapping
+					if (projector != NULL) {
+						if (projector->VisibilityTest(worldPos) == 1.f) {
+							fvec4 proPos = projector->cam->Projection(worldPos);
+							float u = (proPos.x / proPos.w + 1.f) / 2.f, v = (proPos.y / proPos.w + 1.f) / 2.f;
+							if(u >= 0.f && u < 1.f && v >= 0.f && v < 1.f)
+								c =  projector->screen->Fetch(u, v);
+						}
+					}
 					//Per fragment lighting
 					if (light) {
 						fvec4 n = vw0.n * uvw[0] + vw1.n * uvw[1] + vw2.n * uvw[2];
 						fvec4 lightColor;
 						//shadow
-						float shadow;
-						if (shadowMap != NULL) {
-							shadow = shadowMap->ShadowTest(worldPos);
-						}
-						else
-							shadow = 1.0f;
+						
 						for (int i = 0; i < MainScene->lightList.size(); i++) {
+							float shadow;
+							if (MainScene->lightList[i].shadowMap != NULL) {
+								shadow = MainScene->lightList[i].shadowMap->VisibilityTest(worldPos);
+							}
+							else
+								shadow = 1.0f;
 							lightColor = lightColor + MainScene->lightList[i].PhongLighting(worldPos, n, shadow, 0.1f, 2.0f, 2.0f, 10.0f, cam->pos);
+							lightColor.a = 1.f;
 						}
 						SetPixel(p, c * lightColor);
 					}else
@@ -175,17 +209,15 @@ inline fvec4 FrameBuffer::PerspectiveDevide(fvec4 p)
 {
 	//Perspective Division
 	p.z = p.z / p.w;
-	//p.z = log(p.z);
 	p.x = (p.x / p.w + 1.f) / 2.f * screen->w;
 	p.y = (p.y / p.w + 1.f) / 2.f * screen->h;
 	return p;
 }
 
-void FrameBuffer::DrawMesh( Mesh* mesh, FrameBuffer* shadowMap, uint mode)
+void FrameBuffer::DrawMesh( Mesh* mesh, uint mode, FrameBuffer *projector)
 {
 	const int n = mesh->GetIndexSize();
 	Mat4 PV = cam->P * cam->V;
-	mesh->UploadVertex();
 #ifdef MULTI_PROCESS
 #pragma omp parallel for
 #endif 
@@ -195,13 +227,13 @@ void FrameBuffer::DrawMesh( Mesh* mesh, FrameBuffer* shadowMap, uint mode)
 		Vertex v2 = mesh->vertices[mesh->GetIndex(i+2)];
 		//Screen space
 		fvec4 vs0 = PV * v0.p, vs1 = PV * v1.p, vs2 = PV * v2.p;
-		if (ClipTest(vs0) && ClipTest(vs1) && ClipTest(vs2)) {
+
 			//Transform and Projection
-			vs0 = PerspectiveDevide(vs0);
-			vs1 = PerspectiveDevide(vs1);
-			vs2 = PerspectiveDevide(vs2);
-			DrawTriangles(vs0, vs1, vs2, v0, v1, v2, mesh->texture, mode, mesh->enableLight, shadowMap);
-		}
+		vs0 = PerspectiveDevide(vs0);
+		vs1 = PerspectiveDevide(vs1);
+		vs2 = PerspectiveDevide(vs2);
+		DrawTriangles(vs0, vs1, vs2, v0, v1, v2, mesh->texture, mode, mesh->enableLight, projector);
+		
 	}
 }
 
