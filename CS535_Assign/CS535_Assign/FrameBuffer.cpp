@@ -151,7 +151,7 @@ void FrameBuffer::DrawTriangles(fvec4 v0, fvec4 v1, fvec4 v2, Vertex vw0, Vertex
 					float area = EdgeFunction(v0, v1, v2);
 					w0 /= area; w1 /= area; w2 /= area;
 					p.z = v0.z * w0 + v1.z * w1 + v2.z * w2;
-					p.w = v0.w * w0 + v1.w * w1 + v2.w * w2;
+					p.w = 1.f / (1.f / v0.w * w0 + 1.f / v1.w * w1 + 1.f / v2.w * w2);
 
 					fvec4 worldPos = cam->InverseProjection(p, screen->w, screen->h);
 					fvec4 uvw = WorldSpaceInterpolation(vw0.p, vw1.p, vw2.p, worldPos);
