@@ -29,6 +29,11 @@ Texture::Texture(int width, int height, int Components) : w(width), h(height), c
 	pixels = new unsigned int[w*h];
 }
 
+Texture::Texture()
+{
+	pixels = nullptr;
+}
+
 void Texture::Clear(fvec4 color)
 {
 	const uint c = convVec4ToRGBA8(color);

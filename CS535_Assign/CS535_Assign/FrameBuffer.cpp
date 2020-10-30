@@ -1,12 +1,13 @@
 #include "FrameBuffer.h"
 #include "Scene.h"
 #include "Mat4.h"
+#include "CubeMap.h"
 #include <omp.h>
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image.h>
 #include <stb_image_write.h>
-
+extern CubeMap skyBox;
 extern Scene* MainScene;
 bool ALPHA_BLEND = false;
 
@@ -41,6 +42,29 @@ FrameBuffer::~FrameBuffer()
 void FrameBuffer::Clear(fvec4 color)
 {
 	screen->Clear(color);
+}
+
+void FrameBuffer::Clear()
+{
+	fvec4 ray00 = fvec4(-1, -1, 0, 1) * cam->InversePV;
+	fvec4 ray01 = fvec4(-1,  1, 0, 1) * cam->InversePV;
+	fvec4 ray10 = fvec4( 1, -1, 0, 1) * cam->InversePV;
+	fvec4 ray11 = fvec4( 1,  1, 0, 1) * cam->InversePV;
+	ray00 = Normalize(ray00 / ray00.w - cam->pos);
+	ray01 = Normalize(ray01 / ray01.w - cam->pos);
+	ray10 = Normalize(ray10 / ray10.w - cam->pos);
+	ray11 = Normalize(ray11 / ray11.w - cam->pos);
+#ifdef MULTI_PROCESS
+#pragma omp parallel for
+#endif 
+	for(int i = 0; i < screen->w; i++)
+		for (int j = 0; j < screen->h; j++) {
+			float u = float(i) / float(screen->w), v = float(j) / float(screen->h);
+			fvec4 d = (ray00 * (1.f - u) + ray10 * u) * (1.f - v) + (ray01 * (1.f - u) + ray11 * u) * v;
+			d = Normalize(d);
+			fvec4 c = skyBox.Fetch(cam->pos, d);
+			screen->SetPixel(i, j, c);
+		}
 }
 
 void FrameBuffer::ClearZBuffer()
@@ -151,7 +175,7 @@ void FrameBuffer::DrawTriangles(fvec4 v0, fvec4 v1, fvec4 v2, Vertex vw0, Vertex
 					float area = EdgeFunction(v0, v1, v2);
 					w0 /= area; w1 /= area; w2 /= area;
 					p.z = v0.z * w0 + v1.z * w1 + v2.z * w2;
-					p.w = v0.w * w0 + v1.w * w1 + v2.w * w2;
+					p.w = 1.f / (1.f/v0.w * w0 + 1.f/v1.w * w1 + 1.f/v2.w * w2);
 
 					fvec4 worldPos = cam->InverseProjection(p, screen->w, screen->h);
 					fvec4 uvw = WorldSpaceInterpolation(vw0.p, vw1.p, vw2.p, worldPos);
@@ -166,6 +190,13 @@ void FrameBuffer::DrawTriangles(fvec4 v0, fvec4 v1, fvec4 v2, Vertex vw0, Vertex
 						c = tex->Fetch(u, v);
 					}else
 						c = vw0.c * uvw[0] + vw1.c * uvw[1] + vw2.c * uvw[2];
+					fvec4 n = vw0.n * uvw[0] + vw1.n * uvw[1] + vw2.n * uvw[2];
+					n = Normalize(n);
+					//Specular
+					fvec4 v = Normalize(cam->pos - worldPos);
+					fvec4 r = n * Dot(n, v) * 2.f - v;
+					r = Normalize(r);
+					c = skyBox.Fetch(worldPos, r);
 					//Projective Texture Mapping
 					if (projector != NULL) {
 						if (projector->VisibilityTest(worldPos) == 1.f) {
@@ -177,7 +208,7 @@ void FrameBuffer::DrawTriangles(fvec4 v0, fvec4 v1, fvec4 v2, Vertex vw0, Vertex
 					}
 					//Per fragment lighting
 					if (light) {
-						fvec4 n = vw0.n * uvw[0] + vw1.n * uvw[1] + vw2.n * uvw[2];
+						
 						fvec4 lightColor;
 						//shadow
 						
@@ -188,7 +219,7 @@ void FrameBuffer::DrawTriangles(fvec4 v0, fvec4 v1, fvec4 v2, Vertex vw0, Vertex
 							}
 							else
 								shadow = 1.0f;
-							lightColor = lightColor + MainScene->lightList[i].PhongLighting(worldPos, n, shadow, 0.1f, 2.0f, 2.0f, 10.0f, cam->pos);
+							lightColor = lightColor + MainScene->lightList[i].PhongLighting(worldPos, n, shadow, 0.3f, 1.0f, 1.0f, 10.0f, cam->pos);
 							lightColor.a = 1.f;
 						}
 						SetPixel(p, c * lightColor);

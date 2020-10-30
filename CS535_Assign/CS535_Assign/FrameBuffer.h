@@ -13,6 +13,7 @@ class FrameBuffer
 public:
 
 	void Clear(fvec4 color);
+	void Clear();
 	void ClearZBuffer();
 	void SetPixel(fvec4 pix, fvec4 color);
 	void Draw2DSegements(fvec4 a, fvec4 b, Vertex vw0, Vertex vw1);
