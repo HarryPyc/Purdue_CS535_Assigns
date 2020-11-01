@@ -9,7 +9,7 @@ Scene* InitMainScene()
 {
 	Scene* scene = new Scene();
 
-	scene->MainCamera = Camera(fvec4(0, 0, 5, 1), fvec4(0, 0, 0, 1), fvec4(0, 1, 0, 0), 70.f, float(WINDOW_WIDTH) / float(WINDOW_HEIGHT), 0.1f, 100.f);
+	scene->MainCamera = Camera(fvec4(0, 0, 4, 1), fvec4(0, 0, 0, 1), fvec4(0, 1, 0, 0), 70.f, float(WINDOW_WIDTH) / float(WINDOW_HEIGHT), 0.1f, 100.f);
 	
 	//Mesh Plane("asset/model/Plane.obj"); Plane.material.color = fvec4(1.f, 1.f, 1.f, 1.f); Plane.S = Scale(fvec4(3, 3, 3, 1));
 	//Plane.texture = new Texture("asset/texture/Light.png");
@@ -23,8 +23,6 @@ Scene* InitMainScene()
 
 	Mesh Fish;
 	Fish.LoadObj("asset/model/Amago0.obj"); Fish.S = Scale(fvec4(10, 10, 10, 1)); Fish.T = Translate(fvec4(0, 0.8f, 0, 0));
-	//Fish.enableLight = true;
-	//Fish.texture = new Texture("asset/texture/AmagoT.bmp"); 
 	scene->meshList.push_back(Fish);
 
 	//Mesh Bunny;

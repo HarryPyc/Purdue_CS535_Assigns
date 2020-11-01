@@ -5,6 +5,7 @@ CubeMap::CubeMap()
 {
 	cube = obj::loadModelFromFile("asset/model/skybox.obj");
 	texture = new Texture("asset/texture/cubemap.png");
+	previous = 0;
 }
 
 CubeMap::~CubeMap() {
@@ -42,14 +43,17 @@ fvec4 CubeMap::Fetch(fvec4 o, fvec4 d)
 {
 	float t, u = 0.f, v = 0.f;
 	fvec4 uvw;
-	for (int i = 0; i < 12; i++) {
-		unsigned short i0 = cube.faces["default"][3 * i + 0], i1 = cube.faces["default"][3 * i + 1], i2 = cube.faces["default"][3 * i + 2];
+	const int pre = previous;
+	for (int i = pre; i < 12 + pre; i++) {
+		const int _i = i%12;
+		unsigned short i0 = cube.faces["default"][3 * _i + 0], i1 = cube.faces["default"][3 * _i + 1], i2 = cube.faces["default"][3 * _i + 2];
 		fvec4 v0(cube.vertex[3 * i0], cube.vertex[3 * i0 + 1], cube.vertex[3 * i0 + 2], 1.f);
 		fvec4 v1(cube.vertex[3 * i1], cube.vertex[3 * i1 + 1], cube.vertex[3 * i1 + 2], 1.f);
 		fvec4 v2(cube.vertex[3 * i2], cube.vertex[3 * i2 + 1], cube.vertex[3 * i2 + 2], 1.f);
 		if (RayTriangleIntersection(o, d, v0, v1, v2, t, uvw)) {
 			u = cube.texCoord[2 * i0] * uvw[0] + cube.texCoord[2 * i1] * uvw[1] + cube.texCoord[2 * i2] * uvw[2];
 			v = cube.texCoord[2 * i0 + 1] * uvw[0] + cube.texCoord[2 * i1 + 1] * uvw[1] + cube.texCoord[2 * i2 + 1] * uvw[2];
+			previous = _i;
 			break;
 		}
 	}

@@ -12,5 +12,6 @@ public:
 private:
 	obj::Model cube;
 	Texture *texture;
+	int previous;
 };
 

@@ -46,14 +46,16 @@ void FrameBuffer::Clear(fvec4 color)
 
 void FrameBuffer::Clear()
 {
-	fvec4 ray00 = fvec4(-1, -1, 0, 1) * cam->InversePV;
-	fvec4 ray01 = fvec4(-1,  1, 0, 1) * cam->InversePV;
-	fvec4 ray10 = fvec4( 1, -1, 0, 1) * cam->InversePV;
-	fvec4 ray11 = fvec4( 1,  1, 0, 1) * cam->InversePV;
-	ray00 = Normalize(ray00 / ray00.w - cam->pos);
-	ray01 = Normalize(ray01 / ray01.w - cam->pos);
-	ray10 = Normalize(ray10 / ray10.w - cam->pos);
-	ray11 = Normalize(ray11 / ray11.w - cam->pos);
+	float hfov = cam->fov, vfov = atan(tan(hfov/2.f) / cam->aspect) *180.f / 3.1415926f;
+	hfov /= 2.f;
+
+	fvec4 right = Normalize(Cross(cam->dir, cam->up));
+	fvec4 ray00 = Rotate(hfov, cam->up) * Rotate(-vfov, right) * cam->dir;
+	fvec4 ray01 = Rotate(hfov, cam->up) * Rotate(vfov, right) * cam->dir;
+	fvec4 ray10 = Rotate(-hfov, cam->up) * Rotate(-vfov, right) * cam->dir;
+	fvec4 ray11 = Rotate(-hfov, cam->up) * Rotate(vfov, right) * cam->dir;
+
+
 #ifdef MULTI_PROCESS
 #pragma omp parallel for
 #endif 

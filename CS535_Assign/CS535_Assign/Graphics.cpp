@@ -48,9 +48,17 @@ void Graphics::run()
 		}
 		MainScene->MainCamera.SetTarget(fvec4(0, 0, 0, 1));
 
-		MainScene->MainCamera.pos = Rotate(1.f, fvec4(0, 1, 0, 0)) * MainScene->MainCamera.pos;
-		MainScene->MainCamera.UpdateP();
+		if (frames < 200) {
+			MainScene->MainCamera.pos = Rotate(0.9f, fvec4(0, 1, 0, 0)) * MainScene->MainCamera.pos;
+		}
+		else if (frames < 400) {
+			MainScene->MainCamera.pos = Rotate(0.9f, fvec4(1, 0, 0, 0)) * MainScene->MainCamera.pos;
+		}
+		else {
+			MainScene->MainCamera.Roll(0.9f);
+		}
 		MainScene->MainCamera.UpdateV();
+
 
 		//string fname = "output/result" + to_string(frames) + ".bmp";
 		//fbo->screen->SaveAsBmp(fname.c_str());
