@@ -18,6 +18,15 @@ void PointLight::TranslateLight(fvec4 t)
 	if (shadowMap != NULL)
 		shadowMap->cam->TranslateCamera(t);
 }
+void PointLight::UploadToDevice(GLuint shader)
+{
+	const int color_loc = glGetUniformLocation(shader, "light.color");
+	if (color_loc != -1)
+		glUniform3fv(color_loc, 1, &color[0]);
+	const int pos_loc = glGetUniformLocation(shader, "light.pos");
+	if (pos_loc != -1)
+		glUniform3fv(pos_loc, 1, &pos[0]);
+}
 fvec4 PointLight::PhongLighting(fvec4 p, fvec4 n, float shadow, float Ka, float Kd, float Ks, float alpha, fvec4 camPos)
 {
 	fvec4 l = pos - p;

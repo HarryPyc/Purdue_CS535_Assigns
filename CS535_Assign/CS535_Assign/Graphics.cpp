@@ -1,6 +1,6 @@
 #include "Graphics.h"
 #include <string>
-
+#include <InitShader.h>
 extern Scene* MainScene;
 extern bool ALPHA_BLEND;
 
@@ -19,7 +19,7 @@ Graphics::Graphics()
 		std::cout << "GLEW initialization failed.\n";
 	}
 	glfwSwapInterval(1);
-
+	
 
 }
 
@@ -64,6 +64,43 @@ void Graphics::run()
 		//fbo->screen->SaveAsBmp(fname.c_str());
 		fbo->screen->Draw();
 		frames++;
+		glfwSwapBuffers(window);
+		glfwPollEvents();
+	}
+}
+
+void Graphics::runGPU()
+{
+	glEnable(GL_DEPTH_TEST);
+	//glEnable(GL_CULL_FACE);
+	//glCullFace(GL_FRONT);
+	GLuint shader = InitShader("shader/vs.vert", "shader/fs.frag");
+
+	for (int i = 0; i < MainScene->meshList.size(); i++) {
+		MainScene->meshList[i].CreateVao();
+		if(MainScene->meshList[i].texture)
+			MainScene->meshList[i].texture->CreateDeviceTexture();
+	}
+
+	while (!glfwWindowShouldClose(window))
+	{
+		glUseProgram(shader);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+
+		MainScene->MainCamera.UploatToDevice(shader);
+		MainScene->lightList[0].UploadToDevice(shader);
+
+		for (int i = 0; i < MainScene->meshList.size(); i++) {
+			MainScene->meshList[i].R = Rotate(1.f, fvec4(0, 1, 0, 0)) * MainScene->meshList[i].R;
+			MainScene->meshList[i].DrawGPU(shader, GL_FILL);//GL_LINE
+		}
+		//Move Camera
+		//MainScene->MainCamera.pos = Rotate(0.5f, fvec4(0, 1, 0, 0)) * MainScene->MainCamera.pos;
+		//MainScene->MainCamera.SetTarget(fvec4(0, 0, 0, 1));
+		//MainScene->MainCamera.UpdateV();
+		
+
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}

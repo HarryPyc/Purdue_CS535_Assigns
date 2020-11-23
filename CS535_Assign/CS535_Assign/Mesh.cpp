@@ -169,4 +169,49 @@ void Mesh::LoadBin(char* fname) {
 
 }
 
+void Mesh::CreateVao() {
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+	GLuint vbo, ebo;
+	glGenBuffers(1, &vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * (data.vertex.size() / 3 * 8), NULL, GL_STATIC_DRAW);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * data.vertex.size(), data.vertex.data());
+	glBufferSubData(GL_ARRAY_BUFFER, sizeof(float) * data.vertex.size(), sizeof(float) * data.normal.size(), data.normal.data());
+	glBufferSubData(GL_ARRAY_BUFFER, 2 * sizeof(float) * data.vertex.size(), sizeof(float) * data.texCoord.size(), data.texCoord.data());
 
+	glGenBuffers(1, &ebo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned short) * data.faces["default"].size(), data.faces["default"].data(), GL_STATIC_DRAW);
+
+	const GLuint pos_loc = 0;
+	glEnableVertexAttribArray(pos_loc);
+	glVertexAttribPointer(pos_loc, 3, GL_FLOAT, GL_FALSE, 0, (void*)(0));
+
+	const GLuint normal_loc = 1;
+	glEnableVertexAttribArray(normal_loc);
+	glVertexAttribPointer(normal_loc, 3, GL_FLOAT, GL_FALSE, 0, (void*)(sizeof(float) * data.vertex.size()));
+
+	const GLuint texCoord_loc = 2;
+	glEnableVertexAttribArray(texCoord_loc);
+	glVertexAttribPointer(texCoord_loc, 2, GL_FLOAT, GL_FALSE, 0, (void*)(2 * sizeof(float) * data.vertex.size()));
+	
+	glBindVertexArray(0);
+}
+
+void Mesh::DrawGPU(GLuint program, GLenum Mode)
+{
+	Mat4 M = T * R * S;
+	int M_loc = glGetUniformLocation(program, "M");
+	if (M_loc != -1)
+	{
+		glUniformMatrix4fv(M_loc, 1, false, &M[0][0]);
+	}
+	if(texture)
+		texture->UploatToDevice(program);
+	glPolygonMode(GL_FRONT_AND_BACK, Mode);
+	glBindVertexArray(vao);
+	glDrawElements(GL_TRIANGLES, data.faces["default"].size(), GL_UNSIGNED_SHORT, 0);
+	glBindVertexArray(0);
+	glBindTexture(GL_TEXTURE_2D, 0);
+}

@@ -39,12 +39,15 @@ public:
 
 	void LoadObj(const string& path);
 	void LoadBin(char* fname);
+	void CreateVao();
+	void DrawGPU(GLuint shader, GLenum Mode);
 	Mesh();
 	Mesh(const string& path);
 	~Mesh() { }
 private:
 	obj::Model data;
 	fvec4 centroid;
+	GLuint vao;
 
 };
 

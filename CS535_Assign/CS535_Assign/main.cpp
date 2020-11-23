@@ -30,7 +30,7 @@ int main(int argc, char** argv) {
 	Graphics* graphics = new Graphics();
 	printGlInfo();
 
-	graphics->run();
+	graphics->runGPU();
 
 	delete graphics;
 	glfwTerminate();

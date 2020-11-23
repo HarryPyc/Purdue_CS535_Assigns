@@ -61,6 +61,23 @@ void Texture::SaveAsBmp(const char* fname)
 	stbi_write_bmp(fname, w, h, 4, pixels);
 }
 
+void Texture::CreateDeviceTexture()
+{
+	glGenTextures(1, &tex_id);
+	glBindTexture(GL_TEXTURE_2D, tex_id);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void Texture::UploatToDevice(GLuint shader)
+{
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, tex_id);
+	glUniform1i(glGetUniformLocation(shader, "Tex"), 0);
+}
+
 inline fvec4 Texture::GetPixel(unsigned int x, unsigned int y)
 {
 	y = y % h, x = x % w;

@@ -16,6 +16,8 @@ public:
 	void SetPixel(unsigned int x, unsigned int y, fvec4 color);
 	void Draw();
 	void SaveAsBmp(const char* fname);
+	void CreateDeviceTexture();
+	void UploatToDevice(GLuint shader);
 	inline fvec4 GetPixel(unsigned int x, unsigned int y);
 	~Texture();
 
@@ -23,6 +25,6 @@ public:
 	int w, h, components;
 private:
 	unsigned int* pixels;
-
+	GLuint tex_id;
 };
 

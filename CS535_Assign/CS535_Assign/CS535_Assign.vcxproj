@@ -164,6 +164,7 @@
     <ClCompile Include="CubeMap.cpp" />
     <ClCompile Include="FrameBuffer.cpp" />
     <ClCompile Include="Graphics.cpp" />
+    <ClCompile Include="include\InitShader.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Mat4.cpp" />
     <ClCompile Include="Mesh.cpp" />
@@ -178,6 +179,7 @@
     <ClInclude Include="Define.h" />
     <ClInclude Include="FrameBuffer.h" />
     <ClInclude Include="Graphics.h" />
+    <ClInclude Include="include\InitShader.h" />
     <ClInclude Include="Mat4.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="ObjLoad.h" />
@@ -185,6 +187,10 @@
     <ClInclude Include="Scene.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Vec4.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shader\fs.frag" />
+    <None Include="shader\vs.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -121,8 +121,8 @@ Mat4 Inverse(Mat4 m)
 Mat4 Perspective(float fovy, float aspect, float zNear, float zFar)
 {
 	float rad = 3.1415926f*fovy/180.f, tanHalfFovy = tan(rad / 2.f);
-	Mat4 P(fvec4(1/(aspect*tanHalfFovy), 0.f, 0.f, 0.f),
-			fvec4(0.f,1/tanHalfFovy, 0.f, 0.f),
+	Mat4 P(fvec4(1.f/(aspect*tanHalfFovy), 0.f, 0.f, 0.f),
+			fvec4(0.f,1.f/tanHalfFovy, 0.f, 0.f),
 			fvec4(0.f, 0.f, -(zNear+zFar)/(zFar-zNear), -(2 * zFar * zNear) / (zFar - zNear)),
 			fvec4(0.f, 0.f, -1.f , 0.f));
 	return P;
@@ -138,7 +138,7 @@ Mat4 LookAt(fvec4 eye, fvec4 center, fvec4 up)
 	res[0] = s;
 	res[1] = u;
 	res[2] = f * (-1.f);
-	res[3] = fvec4(1.f);
+	res[3] = fvec4(0.f, 0.f, 0.f, 1.f);
 	return res;
 }
 

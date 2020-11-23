@@ -15,6 +15,7 @@ public:
 
 
 	void run();
+	void runGPU();
 	Graphics();
 	~Graphics();
 };

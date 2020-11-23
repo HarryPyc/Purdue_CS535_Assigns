@@ -1,5 +1,6 @@
 #pragma once
 #include "Mat4.h"
+#include <GL/glew.h>
 using namespace std;
 
 class Camera
@@ -20,6 +21,7 @@ public:
 
 	void UpdateP();
 	void UpdateV();
+	void UploatToDevice(GLuint shader);
 	fvec4 pos, dir, up;
 	float fov, aspect, zNear, zFar;
 

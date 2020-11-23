@@ -1,6 +1,8 @@
 #include "Camera.h"
 #include <iostream>
 #include <fstream>
+
+
 Camera::Camera(fvec4 _pos, fvec4 _target, fvec4 _up, float _fov, float _aspect, float _zNear, float _zFar) :
 	pos(_pos), dir(Normalize(_target - _pos)), up(_up), fov(_fov), aspect(_aspect), zNear(_zNear), zFar(_zFar)
 {
@@ -68,6 +70,22 @@ void Camera::UpdateV()
 {
 	V = LookAt(pos, pos+dir, up);
 	InversePV = Inverse(Transpose(P * V));
+}
+
+void Camera::UploatToDevice(GLuint program)
+{
+
+	int P_loc = glGetUniformLocation(program, "P");
+	if (P_loc != -1)
+	{
+		glUniformMatrix4fv(P_loc, 1, false, &P[0][0]);
+	}
+	int V_loc = glGetUniformLocation(program, "V");
+	if (V_loc != -1)
+	{
+		glUniformMatrix4fv(V_loc, 1, false, &V[0][0]);
+	}
+	glUniform3fv(glGetUniformLocation(program, "camPos"), 1, &pos[0]);
 }
 
 void Camera::SaveAsTxt(const std::string fileName)
